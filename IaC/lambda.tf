@@ -1,3 +1,51 @@
+# SHARED IAM POLICY FOR DYNAMODB READ ACCESS
+data "aws_iam_policy_document" "dynamodb_read_policy" {
+  statement {
+    effect = "Allow"
+    actions = ["dynamodb:GetItem", "dynamodb:Query"]
+    resources = [
+      aws_dynamodb_table.meetings_table.arn,
+      "${aws_dynamodb_table.meetings_table.arn}/index/StatusIndex"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "dynamodb_read_policy" {
+  name   = "DynamoDBReadAccess"
+  policy = data.aws_iam_policy_document.dynamodb_read_policy.json
+}
+
+# SHARED IAM POLICY FOR DYNAMODB WRITE ACCESS
+data "aws_iam_policy_document" "dynamodb_write_policy" {
+  statement {
+    effect = "Allow"
+    actions = ["dynamodb:UpdateItem", "dynamodb:DescribeTable"]
+    resources = [aws_dynamodb_table.meetings_table.arn]
+  }
+}
+
+resource "aws_iam_policy" "dynamodb_write_policy" {
+  name   = "DynamoDBWriteAccess"
+  policy = data.aws_iam_policy_document.dynamodb_write_policy.json
+}
+
+# SHARED IAM POLICY FOR DYNAMODB PUT/QUERY ACCESS
+data "aws_iam_policy_document" "dynamodb_put_query_policy" {
+  statement {
+    effect = "Allow"
+    actions = ["dynamodb:PutItem", "dynamodb:Query"]
+    resources = [
+      aws_dynamodb_table.meetings_table.arn,
+      "${aws_dynamodb_table.meetings_table.arn}/index/StatusIndex"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "dynamodb_put_query_policy" {
+  name   = "DynamoDBPutQueryAccess"
+  policy = data.aws_iam_policy_document.dynamodb_put_query_policy.json
+}
+
 # GET MEETINGS LAMBDA
 resource "aws_iam_role" "lambda_execution_role_get_meetings" {
   name = "LambdaExecutionRoleGetMeetings"
@@ -14,28 +62,16 @@ resource "aws_iam_role" "lambda_execution_role_get_meetings" {
       }
     ]
   })
-
-  inline_policy {
-    name = "DynamoDBReadAccess"
-    policy = jsonencode({
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Action = ["dynamodb:GetItem", "dynamodb:Query"]
-          Effect = "Allow"
-          Resource = [
-            aws_dynamodb_table.meetings_table.arn,
-            "${aws_dynamodb_table.meetings_table.arn}/index/StatusIndex"
-          ]
-        }
-      ]
-    })
-  }
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_execution_role_get_meetings_basic" {
   role       = aws_iam_role.lambda_execution_role_get_meetings.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_execution_role_get_meetings_dynamodb" {
+  role       = aws_iam_role.lambda_execution_role_get_meetings.name
+  policy_arn = aws_iam_policy.dynamodb_read_policy.arn
 }
 
 resource "aws_lambda_function" "get_meetings_lambda" {
@@ -72,28 +108,16 @@ resource "aws_iam_role" "lambda_execution_role_get_pending_meetings" {
       }
     ]
   })
-
-  inline_policy {
-    name = "DynamoDBReadAccess"
-    policy = jsonencode({
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Action = ["dynamodb:GetItem", "dynamodb:Query"]
-          Effect = "Allow"
-          Resource = [
-            aws_dynamodb_table.meetings_table.arn,
-            "${aws_dynamodb_table.meetings_table.arn}/index/StatusIndex"
-          ]
-        }
-      ]
-    })
-  }
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_execution_role_get_pending_meetings_basic" {
   role       = aws_iam_role.lambda_execution_role_get_pending_meetings.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_execution_role_get_pending_meetings_dynamodb" {
+  role       = aws_iam_role.lambda_execution_role_get_pending_meetings.name
+  policy_arn = aws_iam_policy.dynamodb_read_policy.arn
 }
 
 resource "aws_lambda_function" "get_pending_meetings_lambda" {
@@ -130,25 +154,16 @@ resource "aws_iam_role" "lambda_execution_role_change_meeting_status" {
       }
     ]
   })
-
-  inline_policy {
-    name = "DynamoDBWriteAccess"
-    policy = jsonencode({
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Action   = ["dynamodb:UpdateItem", "dynamodb:DescribeTable"]
-          Effect   = "Allow"
-          Resource = aws_dynamodb_table.meetings_table.arn
-        }
-      ]
-    })
-  }
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_execution_role_change_meeting_status_basic" {
   role       = aws_iam_role.lambda_execution_role_change_meeting_status.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_execution_role_change_meeting_status_dynamodb" {
+  role       = aws_iam_role.lambda_execution_role_change_meeting_status.name
+  policy_arn = aws_iam_policy.dynamodb_write_policy.arn
 }
 
 resource "aws_lambda_function" "change_meeting_status_lambda" {
@@ -208,7 +223,7 @@ resource "aws_lambda_function" "chatbot_lambda" {
 
   environment {
     variables = {
-      BOT_ID = aws_lex_bot.meety_bot.id
+      BOT_ID = aws_lexv2models_bot.meety_bot.id
     }
   }
 }
@@ -237,28 +252,16 @@ resource "aws_iam_role" "lex_lambda_execution_role" {
       }
     ]
   })
-
-  inline_policy {
-    name = "DynamoDBAccess"
-    policy = jsonencode({
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Action = ["dynamodb:PutItem", "dynamodb:Query"]
-          Effect = "Allow"
-          Resource = [
-            aws_dynamodb_table.meetings_table.arn,
-            "${aws_dynamodb_table.meetings_table.arn}/index/StatusIndex"
-          ]
-        }
-      ]
-    })
-  }
 }
 
 resource "aws_iam_role_policy_attachment" "lex_lambda_execution_role_basic" {
   role       = aws_iam_role.lex_lambda_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "lex_lambda_execution_role_dynamodb" {
+  role       = aws_iam_role.lex_lambda_execution_role.name
+  policy_arn = aws_iam_policy.dynamodb_put_query_policy.arn
 }
 
 resource "aws_lambda_function" "lex_lambda" {
@@ -276,5 +279,5 @@ resource "aws_lambda_permission" "lex_lambda_permission" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.lex_lambda.function_name
   principal     = "lexv2.amazonaws.com"
-  source_arn    = "arn:aws:lex:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:bot-alias/${aws_lex_bot.meety_bot.name}/TSTALIASID"
+  source_arn    = "arn:aws:lex:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:bot-alias/${aws_lexv2models_bot.meety_bot.id}/TSTALIASID"
 }

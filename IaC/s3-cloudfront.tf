@@ -53,10 +53,6 @@ resource "aws_s3_bucket_policy" "frontend" {
   })
 }
 
-data "aws_route53_zone" "main" {
-  name = "monvillarin.com"
-}
-
 resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
     domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
@@ -100,19 +96,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 
   viewer_certificate {
-    acm_certificate_arn = "arn:aws:acm:us-east-1:026045577315:certificate/6f9106a0-d143-4bdb-8d9c-60ec70b4e3ee"
+    acm_certificate_arn = var.acm_certificate_arn
     ssl_support_method  = "sni-only"
-  }
-}
-
-resource "aws_route53_record" "chatbot" {
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = "chatbot.monvillarin.com"
-  type    = "A"
-
-  alias {
-    name                   = aws_cloudfront_distribution.s3_distribution.domain_name
-    zone_id                = aws_cloudfront_distribution.s3_distribution.hosted_zone_id
-    evaluate_target_health = false
   }
 }

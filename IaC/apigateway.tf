@@ -39,9 +39,9 @@ resource "aws_apigatewayv2_route" "get_meetings" {
 }
 
 resource "aws_apigatewayv2_integration" "get_meetings" {
-  api_id           = aws_apigatewayv2_api.http_api.id
-  integration_type = "AWS_PROXY"
-  integration_uri  = aws_lambda_function.get_meetings_lambda.invoke_arn
+  api_id                 = aws_apigatewayv2_api.http_api.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.get_meetings_lambda.invoke_arn
   payload_format_version = "2.0"
 }
 
@@ -56,9 +56,9 @@ resource "aws_apigatewayv2_route" "get_pending_meetings" {
 }
 
 resource "aws_apigatewayv2_integration" "get_pending_meetings" {
-  api_id           = aws_apigatewayv2_api.http_api.id
-  integration_type = "AWS_PROXY"
-  integration_uri  = aws_lambda_function.get_pending_meetings_lambda.invoke_arn
+  api_id                 = aws_apigatewayv2_api.http_api.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.get_pending_meetings_lambda.invoke_arn
   payload_format_version = "2.0"
 }
 
@@ -73,9 +73,9 @@ resource "aws_apigatewayv2_route" "put_status" {
 }
 
 resource "aws_apigatewayv2_integration" "put_status" {
-  api_id           = aws_apigatewayv2_api.http_api.id
-  integration_type = "AWS_PROXY"
-  integration_uri  = aws_lambda_function.change_meeting_status_lambda.invoke_arn
+  api_id                 = aws_apigatewayv2_api.http_api.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.change_meeting_status_lambda.invoke_arn
   payload_format_version = "2.0"
 }
 
@@ -87,8 +87,8 @@ resource "aws_apigatewayv2_route" "chatbot" {
 }
 
 resource "aws_apigatewayv2_integration" "chatbot" {
-  api_id           = aws_apigatewayv2_api.http_api.id
-  integration_type = "AWS_PROXY"
-  integration_uri  = aws_lambda_function.chatbot_lambda.invoke_arn
+  api_id                 = aws_apigatewayv2_api.http_api.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.chatbot_lambda.invoke_arn
   payload_format_version = "2.0"
 }
