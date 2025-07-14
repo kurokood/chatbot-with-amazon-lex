@@ -19,3 +19,6 @@ variable "user_email" {
   description = "The email for the initial user"
   type        = string
 }
+
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
