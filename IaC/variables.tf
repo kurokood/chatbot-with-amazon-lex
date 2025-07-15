@@ -29,7 +29,7 @@ variable "zone_name" {
 }
 
 variable "acm_certificate_arn" {
-  description = "The ARN of the ACM certificate of monvillarin.com"
+  description = "The ARN of the ACM certificate for monvillarin.com"
   type        = string
   default     = "arn:aws:acm:us-east-1:026045577315:certificate/6f9106a0-d143-4bdb-8d9c-60ec70b4e3ee"
 }
