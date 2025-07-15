@@ -3,7 +3,7 @@ resource "random_id" "bucket_suffix" {
 }
 
 resource "aws_s3_bucket" "frontend" {
-  bucket = "frontend-chapter-7-${random_id.bucket_suffix.hex}"
+  bucket = "chatbot-frotend-121485"
 }
 
 resource "aws_s3_bucket_public_access_block" "frontend" {
