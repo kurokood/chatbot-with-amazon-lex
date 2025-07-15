@@ -3,6 +3,7 @@ name: Chatbot with Amazon Lex
 on:
   push:
     branches:
+      - main
       - dev
     paths:
       - 'chatbot-with-amazon-lex/frontend/**'
