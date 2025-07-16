@@ -12,3 +12,6 @@
 
 # Ignore plan output
 **/*.plan
+
+# Ignore Kiro steering files
+**/*.kiro/
