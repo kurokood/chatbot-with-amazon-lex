@@ -79,16 +79,16 @@ resource "aws_apigatewayv2_integration" "put_status" {
   payload_format_version = "2.0"
 }
 
-# CHATBOT ROUTE
-resource "aws_apigatewayv2_route" "chatbot" {
+# GENERATIVE AI CHATBOT ROUTE
+resource "aws_apigatewayv2_route" "generative_chatbot" {
   api_id    = aws_apigatewayv2_api.http_api.id
   route_key = "POST /chatbot"
-  target    = "integrations/${aws_apigatewayv2_integration.chatbot.id}"
+  target    = "integrations/${aws_apigatewayv2_integration.generative_chatbot.id}"
 }
 
-resource "aws_apigatewayv2_integration" "chatbot" {
+resource "aws_apigatewayv2_integration" "generative_chatbot" {
   api_id                 = aws_apigatewayv2_api.http_api.id
   integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.chatbot_lambda.invoke_arn
+  integration_uri        = aws_lambda_function.generative_chatbot_lambda.invoke_arn
   payload_format_version = "2.0"
 }

@@ -7,7 +7,7 @@ variable "api_name" {
 variable "user_pool_name" {
   description = "The name for the Cognito User Pool"
   type        = string
-  default     = "chapter7-userpool"
+  default     = "meety-userpool"
 }
 
 variable "username" {
@@ -32,4 +32,5 @@ variable "acm_certificate_arn" {
   default     = "arn:aws:acm:us-east-1:026045577315:certificate/6f9106a0-d143-4bdb-8d9c-60ec70b4e3ee"
 }
 
+# Data sources moved to s3-cloudfront.tf to avoid duplication
 data "aws_region" "current" {}

@@ -3,7 +3,7 @@ output "cognito_user_pool_id" {
   value       = aws_cognito_user_pool.user_pool.id
 }
 
-output "client_id" {
+output "cognito_client_id" {
   description = "The client ID for the Cognito User Pool app client"
   value       = aws_cognito_user_pool_client.user_pool_client.id
 }
@@ -15,4 +15,14 @@ output "api_url" {
 output "cloudfront_distribution_url" {
   description = "URL of the CloudFront distribution to Access your frontend"
   value       = aws_cloudfront_distribution.s3_distribution.domain_name
+}
+
+output "generative_bot_id" {
+  description = "The ID of the Generative AI Lex Bot"
+  value       = aws_lexv2models_bot.meety_generative_bot.id
+}
+
+output "custom_domain_url" {
+  description = "Custom domain URL for the frontend"
+  value       = "https://chatbot.monvillarin.com"
 }
