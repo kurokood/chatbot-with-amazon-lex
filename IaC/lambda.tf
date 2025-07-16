@@ -82,6 +82,9 @@ resource "aws_lambda_function" "get_meetings_lambda" {
   timeout       = 60
 
   filename = "${path.module}/lambda/get_meetings.zip"
+
+  # Inline code from CloudFormation template
+  source_code_hash = filebase64sha256("${path.module}/lambda/get_meetings.zip")
 }
 
 resource "aws_lambda_permission" "get_meetings_lambda_permission" {

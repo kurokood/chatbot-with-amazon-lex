@@ -6,7 +6,7 @@ locals {
 }
 
 resource "aws_s3_bucket" "frontend" {
-  bucket = "frontend-chapter-7-${local.bucket_suffix}"
+  bucket = "chatbot-frotend-121485"
 }
 
 resource "aws_s3_bucket_public_access_block" "frontend" {
@@ -26,9 +26,13 @@ resource "aws_s3_bucket_website_configuration" "frontend" {
   }
 }
 
-# CloudFront Origin Access Identity (legacy approach as in CloudFormation)
-resource "aws_cloudfront_origin_access_identity" "oai" {
-  comment = "Origin Access Identity for frontend-chapter-7-${local.bucket_suffix}"
+# CloudFront Origin Access Control (OAC) - Modern approach
+resource "aws_cloudfront_origin_access_control" "oac" {
+  name                              = "OAC-${aws_s3_bucket.frontend.bucket}"
+  description                       = "Origin Access Control for ${aws_s3_bucket.frontend.bucket}"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
 }
 
 resource "aws_s3_bucket_policy" "frontend" {
@@ -39,10 +43,15 @@ resource "aws_s3_bucket_policy" "frontend" {
       {
         Effect = "Allow"
         Principal = {
-          AWS = aws_cloudfront_origin_access_identity.oai.iam_arn
+          Service = "cloudfront.amazonaws.com"
         }
         Action   = "s3:GetObject"
         Resource = "${aws_s3_bucket.frontend.arn}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.s3_distribution.arn
+          }
+        }
       }
     ]
   })
@@ -50,23 +59,21 @@ resource "aws_s3_bucket_policy" "frontend" {
 
 resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
-    domain_name = aws_s3_bucket.frontend.bucket_regional_domain_name
-    origin_id   = "origin-frontend-chapter-7-${local.bucket_suffix}"
-
-    s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
-    }
+    domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
+    origin_id                = "origin-${aws_s3_bucket.frontend.bucket}"
+    origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
   }
 
   enabled             = true
   is_ipv6_enabled     = true
   default_root_object = "index.html"
   http_version        = "http2"
+  aliases             = ["chatbot.monvillarin.com"]
 
   default_cache_behavior {
     allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods         = ["GET", "HEAD"]
-    target_origin_id       = "origin-frontend-chapter-7-${local.bucket_suffix}"
+    target_origin_id       = "origin-${aws_s3_bucket.frontend.bucket}"
     compress               = true
     viewer_protocol_policy = "redirect-to-https"
 
@@ -94,6 +101,8 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn      = var.acm_certificate_arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
   }
 }

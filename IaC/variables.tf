@@ -21,16 +21,15 @@ variable "user_email" {
 }
 
 variable "zone_name" {
-  description = "The Route53 zone name"
+  description = "The Route53 hosted zone name"
   type        = string
   default     = "monvillarin.com"
 }
 
 variable "acm_certificate_arn" {
-  description = "The ARN of the ACM certificate for monvillarin.com"
+  description = "The ARN of the ACM certificate for the domain"
   type        = string
   default     = "arn:aws:acm:us-east-1:026045577315:certificate/6f9106a0-d143-4bdb-8d9c-60ec70b4e3ee"
 }
 
-data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
