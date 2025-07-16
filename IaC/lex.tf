@@ -22,11 +22,11 @@ resource "aws_lexv2models_bot" "meety_bot" {
   name        = "MeetyBot"
   description = "Meety chatbot"
   role_arn    = aws_iam_role.lex_bot_role.arn
-
+  
   data_privacy {
     child_directed = false
   }
-
+  
   idle_session_ttl_in_seconds = 300
 }
 
@@ -58,13 +58,13 @@ resource "aws_lexv2models_intent" "start_meety" {
 resource "aws_lexv2models_bot_version" "meety_bot_version" {
   bot_id      = aws_lexv2models_bot.meety_bot.id
   description = "Initial version"
-
+  
   locale_specification = {
     "en_US" = {
       source_bot_version = "DRAFT"
     }
   }
-
+  
   depends_on = [
     aws_lexv2models_intent.start_meety
   ]

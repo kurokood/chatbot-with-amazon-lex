@@ -24,7 +24,7 @@ resource "aws_cognito_user_pool" "user_pool" {
     allow_admin_create_user_only = true
     invite_message_template {
       email_message = "Hello {username} from the Chatbot Application.\nYour temporary password is {####}"
-      email_subject = "Cognito - Your temporary password"
+      email_subject = "Chapter7 - Your temporary password"
       sms_message   = "Hello {username}, your temporary password is {####}"
     }
   }
@@ -42,10 +42,9 @@ resource "aws_cognito_user_pool" "user_pool" {
 }
 
 resource "aws_cognito_user_pool_client" "user_pool_client" {
-  name                = "my-user-pool-client"
-  user_pool_id        = aws_cognito_user_pool.user_pool.id
-  generate_secret     = false
-  explicit_auth_flows = ["ADMIN_NO_SRP_AUTH"]
+  name            = "my-user-pool-client"
+  user_pool_id    = aws_cognito_user_pool.user_pool.id
+  generate_secret = false
 }
 
 resource "aws_cognito_user" "user" {
