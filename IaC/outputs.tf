@@ -12,17 +12,8 @@ output "api_url" {
   description = "The URL of the HTTP API"
   value       = "https://${aws_apigatewayv2_api.http_api.id}.execute-api.${data.aws_region.current.name}.amazonaws.com/${aws_apigatewayv2_stage.http_api_stage.name}"
 }
+
 output "cloudfront_distribution_url" {
   description = "URL of the CloudFront distribution to Access your frontend"
   value       = aws_cloudfront_distribution.s3_distribution.domain_name
-}
-
-output "generative_bot_id" {
-  description = "The ID of the Generative AI Lex Bot"
-  value       = aws_lexv2models_bot.meety_generative_bot.id
-}
-
-output "custom_domain_url" {
-  description = "Custom domain URL for the frontend"
-  value       = "https://chatbot.monvillarin.com"
 }

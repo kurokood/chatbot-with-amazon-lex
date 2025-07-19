@@ -77,18 +77,17 @@ resource "aws_iam_role_policy" "generative_lambda_dynamodb_policy" {
 resource "aws_lambda_function" "generative_lex_lambda" {
   function_name = "generative-lex-fulfillment"
   role          = aws_iam_role.generative_lambda_execution_role.arn
-  handler       = "index.lambda_handler"
+  handler       = "meety_lex.lambda_handler"
   runtime       = "python3.12"
   timeout       = 60
 
-  filename = "${path.module}/lambda/generative_lex.zip"
+  filename = "${path.module}/lambda/meety_lex.zip"
 
   environment {
     variables = {
-      BEDROCK_MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
       DYNAMODB_TABLE   = aws_dynamodb_table.meetings_table.name
       BOT_ID           = aws_lexv2models_bot.meety_generative_bot.id
-      BOT_ALIAS_ID     = "TSTALIASID"  # Manual alias created in AWS Console
+      BOT_ALIAS_ID     = "TSTALIASID" # Manual alias created in AWS Console
     }
   }
 }
@@ -106,7 +105,7 @@ resource "aws_lambda_permission" "generative_lex_lambda_permission" {
 resource "aws_lambda_function" "generative_chatbot_lambda" {
   function_name = "generative-chatbot-api"
   role          = aws_iam_role.generative_lambda_execution_role.arn
-  handler       = "index.lambda_handler"
+  handler       = "generative_chatbot.lambda_handler"
   runtime       = "python3.12"
   timeout       = 60
 
@@ -115,7 +114,7 @@ resource "aws_lambda_function" "generative_chatbot_lambda" {
   environment {
     variables = {
       BOT_ID       = aws_lexv2models_bot.meety_generative_bot.id
-      BOT_ALIAS_ID = "TSTALIASID"  # Manual alias created in AWS Console
+      BOT_ALIAS_ID = "TSTALIASID" # Manual alias created in AWS Console
       LOCALE_ID    = "en_US"
     }
   }

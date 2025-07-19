@@ -62,7 +62,7 @@ resource "aws_iam_role_policy_attachment" "lambda_execution_role_get_meetings_dy
 resource "aws_lambda_function" "get_meetings_lambda" {
   function_name = "get-meetings"
   role          = aws_iam_role.lambda_execution_role_get_meetings.arn
-  handler       = "index.lambda_handler"
+  handler       = "get_meetings.lambda_handler"
   runtime       = "python3.12"
   timeout       = 60
 
@@ -111,7 +111,7 @@ resource "aws_iam_role_policy_attachment" "lambda_execution_role_get_pending_mee
 resource "aws_lambda_function" "get_pending_meetings_lambda" {
   function_name = "get-pending-meetings"
   role          = aws_iam_role.lambda_execution_role_get_pending_meetings.arn
-  handler       = "index.lambda_handler"
+  handler       = "get_pending_meetings.lambda_handler"
   runtime       = "python3.12"
   timeout       = 60
 
@@ -157,7 +157,7 @@ resource "aws_iam_role_policy_attachment" "lambda_execution_role_change_meeting_
 resource "aws_lambda_function" "change_meeting_status_lambda" {
   function_name = "change-meeting-status"
   role          = aws_iam_role.lambda_execution_role_change_meeting_status.arn
-  handler       = "index.lambda_handler"
+  handler       = "change_meeting_status.lambda_handler"
   runtime       = "python3.12"
   timeout       = 60
 

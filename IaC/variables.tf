@@ -13,11 +13,13 @@ variable "user_pool_name" {
 variable "username" {
   description = "The username for the initial user"
   type        = string
+  default = "kurokood"
 }
 
 variable "user_email" {
   description = "The email for the initial user"
   type        = string
+  default = "villarinmon@gmail.com"
 }
 
 variable "zone_name" {

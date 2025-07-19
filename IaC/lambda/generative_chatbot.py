@@ -59,9 +59,9 @@ def lambda_handler(event, context):
         # Get session attributes for context
         session_attributes = lex_response.get('sessionState', {}).get('sessionAttributes', {})
         
-        # Get intent information
+        # Get intent information - with our single intent approach, we're less concerned with the intent name
         intent_info = lex_response.get('sessionState', {}).get('intent', {})
-        intent_name = intent_info.get('name', 'Unknown')
+        intent_name = intent_info.get('name', 'MeetingAssistant')
         intent_state = intent_info.get('state', 'Unknown')
         
         # Create response

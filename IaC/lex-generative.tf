@@ -81,45 +81,15 @@ resource "aws_lexv2models_bot_locale" "meety_generative_locale" {
   # The current Terraform AWS provider doesn't support generative_ai_settings block
 }
 
-# Meeting Management Intent with Generative AI
-resource "aws_lexv2models_intent" "meeting_management" {
+# StartMeety Intent - For greeting and starting conversations
+resource "aws_lexv2models_intent" "start_meety" {
   bot_id      = aws_lexv2models_bot.meety_generative_bot.id
   bot_version = "DRAFT"
   locale_id   = aws_lexv2models_bot_locale.meety_generative_locale.locale_id
-  name        = "MeetingManagement"
-  description = "Comprehensive meeting management with natural language understanding"
+  name        = "StartMeety"
+  description = "Intent for greeting and starting conversations"
 
-  # Sample utterances - Generative AI will expand these automatically
-  sample_utterance {
-    utterance = "I want to schedule a meeting"
-  }
-  sample_utterance {
-    utterance = "Book a meeting for me"
-  }
-  sample_utterance {
-    utterance = "Can you help me set up a meeting"
-  }
-  sample_utterance {
-    utterance = "Schedule a call"
-  }
-  sample_utterance {
-    utterance = "I need to arrange a meeting"
-  }
-
-  # Enable fulfillment with Lambda
-  fulfillment_code_hook {
-    enabled = true
-  }
-}
-
-# Welcome Intent for initial greetings
-resource "aws_lexv2models_intent" "welcome_intent" {
-  bot_id      = aws_lexv2models_bot.meety_generative_bot.id
-  bot_version = "DRAFT"
-  locale_id   = aws_lexv2models_bot_locale.meety_generative_locale.locale_id
-  name        = "WelcomeIntent"
-  description = "Welcome users and introduce capabilities"
-
+  # Sample utterances for greetings
   sample_utterance {
     utterance = "Hello"
   }
@@ -127,14 +97,63 @@ resource "aws_lexv2models_intent" "welcome_intent" {
     utterance = "Hi"
   }
   sample_utterance {
-    utterance = "Hey"
+    utterance = "Hey Meety"
   }
   sample_utterance {
-    utterance = "Good morning"
+    utterance = "help"
+  }
+}
+
+# Meeting Assistant Intent - For scheduling meetings
+resource "aws_lexv2models_intent" "meeting_assistant" {
+  bot_id      = aws_lexv2models_bot.meety_generative_bot.id
+  bot_version = "DRAFT"
+  locale_id   = aws_lexv2models_bot_locale.meety_generative_locale.locale_id
+  name        = "MeetingAssistant"
+  description = "Intent for scheduling meetings"
+
+  # Sample utterances for scheduling meetings
+  sample_utterance {
+    utterance = "I want to schedule a meeting"
   }
   sample_utterance {
-    utterance = "Help"
+    utterance = "Book a meeting"
   }
+  sample_utterance {
+    utterance = "Schedule a meeting"
+  }
+  sample_utterance {
+    utterance = "Set up a meeting"
+  }
+  sample_utterance {
+    utterance = "Create a meeting"
+  }
+  sample_utterance {
+    utterance = "I need to schedule a meeting"
+  }
+  sample_utterance {
+    utterance = "Help me book a meeting"
+  }
+
+  # Enable fulfillment with Lambda
+  fulfillment_code_hook {
+    enabled = true
+  }
+
+  # Note: Slots and confirmation settings need to be configured manually in AWS Console
+  # The current Terraform AWS provider doesn't support these blocks directly
+}
+
+# Fallback Intent - For handling unrecognized inputs
+resource "aws_lexv2models_intent" "fallback_intent" {
+  bot_id      = aws_lexv2models_bot.meety_generative_bot.id
+  bot_version = "DRAFT"
+  locale_id   = aws_lexv2models_bot_locale.meety_generative_locale.locale_id
+  name        = "FallbackIntent"
+  description = "Intent for handling unrecognized inputs with response"
+
+  # This is a special intent that doesn't need sample utterances
+  # It's triggered when no other intent matches the user's input
 }
 
 # Bot Version for deployment
@@ -149,8 +168,9 @@ resource "aws_lexv2models_bot_version" "meety_generative_version" {
   }
 
   depends_on = [
-    aws_lexv2models_intent.meeting_management,
-    aws_lexv2models_intent.welcome_intent,
+    aws_lexv2models_intent.start_meety,
+    aws_lexv2models_intent.meeting_assistant,
+    aws_lexv2models_intent.fallback_intent,
     aws_lexv2models_bot_locale.meety_generative_locale
   ]
 }
