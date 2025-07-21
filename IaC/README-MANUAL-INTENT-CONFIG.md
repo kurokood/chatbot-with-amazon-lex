@@ -53,22 +53,27 @@ After deploying the infrastructure with Terraform, you need to manually configur
    - Enable the fulfillment code hook
    - Select the Lambda function "generative-lex-fulfillment"
 
-## 3. FallbackIntent Configuration
+## 3. CustomFallbackIntent Configuration
 
-1. Go to the "FallbackIntent" intent
+1. Go to the "CustomFallbackIntent" intent
 2. Add the following closing response:
    - "Sorry, I did not get it. I am an expert in scheduling meetings. Do you need help with that?"
 
-## 4. Build and Test the Bot
+## 4. Built-in AMAZON.FallbackIntent Configuration
+
+1. Enable the built-in AMAZON.FallbackIntent in your bot
+2. Configure it to redirect to your CustomFallbackIntent
+
+## 5. Build and Test the Bot
 
 1. Click on "Build" to build the bot
 2. Go to the "Test" section to test the bot
 3. Test each intent:
    - StartMeety: Type "Hello" or "Hi"
    - MeetingAssistant: Type "I want to schedule a meeting"
-   - FallbackIntent: Type something unrelated to meetings
+   - CustomFallbackIntent: Type something unrelated to meetings
 
-## Troubleshooting
+## 6. Troubleshooting
 
 If you encounter any issues:
 

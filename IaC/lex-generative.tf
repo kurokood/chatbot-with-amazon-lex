@@ -144,18 +144,6 @@ resource "aws_lexv2models_intent" "meeting_assistant" {
   # The current Terraform AWS provider doesn't support these blocks directly
 }
 
-# Fallback Intent - For handling unrecognized inputs
-resource "aws_lexv2models_intent" "fallback_intent" {
-  bot_id      = aws_lexv2models_bot.meety_generative_bot.id
-  bot_version = "DRAFT"
-  locale_id   = aws_lexv2models_bot_locale.meety_generative_locale.locale_id
-  name        = "FallbackIntent"
-  description = "Intent for handling unrecognized inputs with response"
-
-  # This is a special intent that doesn't need sample utterances
-  # It's triggered when no other intent matches the user's input
-}
-
 # Bot Version for deployment
 resource "aws_lexv2models_bot_version" "meety_generative_version" {
   bot_id      = aws_lexv2models_bot.meety_generative_bot.id
@@ -170,7 +158,7 @@ resource "aws_lexv2models_bot_version" "meety_generative_version" {
   depends_on = [
     aws_lexv2models_intent.start_meety,
     aws_lexv2models_intent.meeting_assistant,
-    aws_lexv2models_intent.fallback_intent,
+    aws_lexv2models_intent.custom_fallback_intent,
     aws_lexv2models_bot_locale.meety_generative_locale
   ]
 }
