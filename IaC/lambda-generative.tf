@@ -73,6 +73,32 @@ resource "aws_iam_role_policy" "generative_lambda_dynamodb_policy" {
   })
 }
 
+# Lex runtime access policy for frontend chat app integration
+resource "aws_iam_role_policy" "generative_lambda_lex_runtime_policy" {
+  name = "GenerativeLambdaLexRuntimePolicy"
+  role = aws_iam_role.generative_lambda_execution_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "lex:RecognizeText",
+          "lex:RecognizeUtterance",
+          "lex:StartConversation",
+          "lex:GetSession",
+          "lex:PutSession",
+          "lex:DeleteSession"
+        ]
+        Resource = [
+          "arn:aws:lex:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:bot-alias/${aws_lexv2models_bot.meety_generative_bot.id}/*"
+        ]
+      }
+    ]
+  })
+}
+
 # Generative AI Lambda function for Lex fulfillment
 resource "aws_lambda_function" "generative_lex_lambda" {
   function_name = "generative-lex-fulfillment"
@@ -85,9 +111,9 @@ resource "aws_lambda_function" "generative_lex_lambda" {
 
   environment {
     variables = {
-      DYNAMODB_TABLE   = aws_dynamodb_table.meetings_table.name
-      BOT_ID           = aws_lexv2models_bot.meety_generative_bot.id
-      BOT_ALIAS_ID     = "TSTALIASID" # Manual alias created in AWS Console
+      DYNAMODB_TABLE = aws_dynamodb_table.meetings_table.name
+      BOT_ID         = aws_lexv2models_bot.meety_generative_bot.id
+      BOT_ALIAS_ID   = "TSTALIASID" # Manual alias created in AWS Console
     }
   }
 }

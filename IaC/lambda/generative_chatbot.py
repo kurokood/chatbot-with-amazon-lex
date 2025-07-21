@@ -2,124 +2,82 @@ import json
 import boto3
 import os
 import logging
-from datetime import datetime
 
 # Configure logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# Initialize Lex client
+# Initialize Lex V2 client
 lex_client = boto3.client('lexv2-runtime')
 
 # Environment variables
-BOT_ID = os.environ['BOT_ID']
-BOT_ALIAS_ID = os.environ['BOT_ALIAS_ID']
-LOCALE_ID = os.environ['LOCALE_ID']
+BOT_ID = os.environ.get('BOT_ID')
+BOT_ALIAS_ID = os.environ.get('BOT_ALIAS_ID')
+LOCALE_ID = os.environ.get('LOCALE_ID', 'en_US')
 
 def lambda_handler(event, context):
     """
-    API Gateway Lambda function for Generative AI chatbot
+    Lambda function to handle API Gateway requests and forward them to Lex V2
     """
-    logger.info(f"Received event: {json.dumps(event)}")
+    logger.info(f"Event received: {json.dumps(event)}")
     
     try:
-        # Parse the request body
-        if isinstance(event.get('body'), str):
-            body = json.loads(event['body'])
-        else:
-            body = event.get('body', {})
+        # Get request body
+        body = json.loads(event.get('body', '{}'))
         
-        user_message = body.get('message', '')
-        session_id = body.get('sessionId', f"session-{datetime.now().strftime('%Y%m%d%H%M%S')}")
+        # Extract parameters from request
+        user_id = body.get('userId', 'default-user')
+        message = body.get('message', '')
+        session_attributes = body.get('sessionAttributes', {})
         
-        if not user_message:
-            return create_error_response(400, "Message is required")
+        if not message:
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': 'Message is required'})
+            }
         
-        # Call Lex with the user message
-        lex_response = lex_client.recognize_text(
+        # Call Lex V2 API
+        response = lex_client.recognize_text(
             botId=BOT_ID,
             botAliasId=BOT_ALIAS_ID,
             localeId=LOCALE_ID,
-            sessionId=session_id,
-            text=user_message
+            sessionId=user_id,
+            text=message,
+            sessionState={
+                'sessionAttributes': session_attributes
+            }
         )
         
-        logger.info(f"Lex response: {json.dumps(lex_response)}")
+        logger.info(f"Lex response: {json.dumps(response, default=str)}")
         
-        # Extract the bot response
-        bot_messages = []
-        if 'messages' in lex_response:
-            for message in lex_response['messages']:
-                if message.get('contentType') == 'PlainText':
-                    bot_messages.append(message.get('content', ''))
-        
-        # Combine all messages
-        bot_response = '\n'.join(bot_messages) if bot_messages else "I'm sorry, I didn't understand that. Could you please rephrase?"
-        
-        # Get session attributes for context
-        session_attributes = lex_response.get('sessionState', {}).get('sessionAttributes', {})
-        
-        # Get intent information - with our single intent approach, we're less concerned with the intent name
-        intent_info = lex_response.get('sessionState', {}).get('intent', {})
-        intent_name = intent_info.get('name', 'MeetingAssistant')
-        intent_state = intent_info.get('state', 'Unknown')
-        
-        # Create response
-        response_body = {
-            'botResponse': bot_response,
-            'sessionId': session_id,
-            'intentName': intent_name,
-            'intentState': intent_state,
-            'sessionAttributes': session_attributes,
-            'timestamp': datetime.now().isoformat()
+        # Format response for frontend
+        formatted_response = {
+            'message': response.get('messages', [{}])[0].get('content', '') if response.get('messages') else '',
+            'dialogState': response.get('sessionState', {}).get('intent', {}).get('state', ''),
+            'sessionAttributes': response.get('sessionState', {}).get('sessionAttributes', {}),
+            'slots': response.get('sessionState', {}).get('intent', {}).get('slots', {})
         }
         
         return {
             'statusCode': 200,
             'headers': {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-                'Access-Control-Allow-Methods': 'POST,OPTIONS'
+                'Access-Control-Allow-Origin': '*'
             },
-            'body': json.dumps(response_body)
+            'body': json.dumps(formatted_response)
         }
         
-    except json.JSONDecodeError as e:
-        logger.error(f"JSON decode error: {str(e)}")
-        return create_error_response(400, "Invalid JSON in request body")
-        
     except Exception as e:
-        logger.error(f"Error processing request: {str(e)}")
-        return create_error_response(500, f"Internal server error: {str(e)}")
-
-def create_error_response(status_code, message):
-    """Create a standardized error response"""
-    
-    return {
-        'statusCode': status_code,
-        'headers': {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-            'Access-Control-Allow-Methods': 'POST,OPTIONS'
-        },
-        'body': json.dumps({
-            'error': message,
-            'timestamp': datetime.now().isoformat()
-        })
-    }
-
-# Handle OPTIONS requests for CORS
-def handle_options():
-    """Handle CORS preflight requests"""
-    
-    return {
-        'statusCode': 200,
-        'headers': {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-            'Access-Control-Allow-Methods': 'POST,OPTIONS'
-        },
-        'body': ''
-    }
+        logger.error(f"Error: {str(e)}")
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({'error': str(e)})
+        }
