@@ -1,24 +1,24 @@
 // AWS Amplify and Cognito Authentication
 const awsConfig = {
   Auth: {
-    region: 'us-east-1',
-    userPoolId: 'us-east-1_GfzCYQpd3',
-    userPoolWebClientId: '3d3rjg2t10vh45cnrm3fkc2egn',
+    region: "us-east-1",
+    userPoolId: "us-east-1_GfzCYQpd3",
+    userPoolWebClientId: "3d3rjg2t10vh45cnrm3fkc2egn",
     mandatorySignIn: true,
-    authenticationFlowType: 'USER_PASSWORD_AUTH'
+    authenticationFlowType: "USER_PASSWORD_AUTH",
   },
   API: {
     endpoints: [
       {
         name: "MeetyAPI",
-        endpoint: "https://ih183j5ibd.execute-api.us-east-1.amazonaws.com/dev"
-      }
-    ]
-  }
+        endpoint: "https://ih183j5ibd.execute-api.us-east-1.amazonaws.com/dev",
+      },
+    ],
+  },
 };
 
 // Initialize Amplify
-if (typeof Amplify !== 'undefined') {
+if (typeof Amplify !== "undefined") {
   Amplify.configure(awsConfig);
 }
 
@@ -29,7 +29,7 @@ function AuthProvider({ children }) {
   const [authState, setAuthState] = React.useState({
     isAuthenticated: false,
     user: null,
-    isLoading: true
+    isLoading: true,
   });
 
   React.useEffect(() => {
@@ -43,13 +43,13 @@ function AuthProvider({ children }) {
       setAuthState({
         isAuthenticated: true,
         user,
-        isLoading: false
+        isLoading: false,
       });
     } catch (error) {
       setAuthState({
         isAuthenticated: false,
         user: null,
-        isLoading: false
+        isLoading: false,
       });
     }
   }
@@ -60,13 +60,13 @@ function AuthProvider({ children }) {
       setAuthState({
         isAuthenticated: true,
         user,
-        isLoading: false
+        isLoading: false,
       });
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.message || "Failed to sign in" 
+      return {
+        success: false,
+        error: error.message || "Failed to sign in",
       };
     }
   }
@@ -77,23 +77,25 @@ function AuthProvider({ children }) {
       setAuthState({
         isAuthenticated: false,
         user: null,
-        isLoading: false
+        isLoading: false,
       });
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.message || "Failed to sign out" 
+      return {
+        success: false,
+        error: error.message || "Failed to sign out",
       };
     }
   }
 
   return (
-    <AuthContext.Provider value={{ 
-      ...authState, 
-      signIn, 
-      signOut 
-    }}>
+    <AuthContext.Provider
+      value={{
+        ...authState,
+        signIn,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -115,10 +117,12 @@ function MeetingCalendar() {
   async function fetchMeetings() {
     try {
       setIsLoading(true);
-      const response = await API.get('MeetyAPI', '/meetings', {
+      const response = await API.get("MeetyAPI", "/meetings", {
         headers: {
-          Authorization: `Bearer ${(await Auth.currentSession()).getIdToken().getJwtToken()}`
-        }
+          Authorization: `Bearer ${(await Auth.currentSession())
+            .getIdToken()
+            .getJwtToken()}`,
+        },
       });
       setMeetings(response);
       setIsLoading(false);
@@ -130,14 +134,16 @@ function MeetingCalendar() {
 
   async function updateMeetingStatus(meetingId, newStatus) {
     try {
-      await API.put('MeetyAPI', '/status', {
+      await API.put("MeetyAPI", "/status", {
         headers: {
-          Authorization: `Bearer ${(await Auth.currentSession()).getIdToken().getJwtToken()}`
+          Authorization: `Bearer ${(await Auth.currentSession())
+            .getIdToken()
+            .getJwtToken()}`,
         },
         body: {
           meetingId,
-          status: newStatus
-        }
+          status: newStatus,
+        },
       });
       // Refresh the list after update
       fetchMeetings();
@@ -177,18 +183,30 @@ function MeetingCalendar() {
               </tr>
             </thead>
             <tbody>
-              {meetings.map(meeting => (
+              {meetings.map((meeting) => (
                 <tr key={meeting.meetingId}>
                   <td>{new Date(meeting.date).toLocaleDateString()}</td>
                   <td>{meeting.time}</td>
                   <td>{meeting.subject}</td>
-                  <td>{meeting.attendees.join(', ')}</td>
-                  <td className={`meeting-status-${meeting.status.toLowerCase()}`}>{meeting.status}</td>
+                  <td>{meeting.attendees.join(", ")}</td>
+                  <td
+                    className={`meeting-status-${meeting.status.toLowerCase()}`}
+                  >
+                    {meeting.status}
+                  </td>
                   <td>
-                    <button onClick={() => updateMeetingStatus(meeting.meetingId, 'confirmed')}>
+                    <button
+                      onClick={() =>
+                        updateMeetingStatus(meeting.meetingId, "confirmed")
+                      }
+                    >
                       Confirm
                     </button>
-                    <button onClick={() => updateMeetingStatus(meeting.meetingId, 'cancelled')}>
+                    <button
+                      onClick={() =>
+                        updateMeetingStatus(meeting.meetingId, "cancelled")
+                      }
+                    >
                       Cancel
                     </button>
                   </td>
@@ -217,10 +235,12 @@ function PendingMeetings() {
   async function fetchPendingMeetings() {
     try {
       setIsLoading(true);
-      const response = await API.get('MeetyAPI', '/pending', {
+      const response = await API.get("MeetyAPI", "/pending", {
         headers: {
-          Authorization: `Bearer ${(await Auth.currentSession()).getIdToken().getJwtToken()}`
-        }
+          Authorization: `Bearer ${(await Auth.currentSession())
+            .getIdToken()
+            .getJwtToken()}`,
+        },
       });
       setPendingMeetings(response);
       setIsLoading(false);
@@ -232,14 +252,16 @@ function PendingMeetings() {
 
   async function updateMeetingStatus(meetingId, newStatus) {
     try {
-      await API.put('MeetyAPI', '/status', {
+      await API.put("MeetyAPI", "/status", {
         headers: {
-          Authorization: `Bearer ${(await Auth.currentSession()).getIdToken().getJwtToken()}`
+          Authorization: `Bearer ${(await Auth.currentSession())
+            .getIdToken()
+            .getJwtToken()}`,
         },
         body: {
           meetingId,
-          status: newStatus
-        }
+          status: newStatus,
+        },
       });
       // Refresh the list after update
       fetchPendingMeetings();
@@ -278,17 +300,25 @@ function PendingMeetings() {
               </tr>
             </thead>
             <tbody>
-              {pendingMeetings.map(meeting => (
+              {pendingMeetings.map((meeting) => (
                 <tr key={meeting.meetingId}>
                   <td>{new Date(meeting.date).toLocaleDateString()}</td>
                   <td>{meeting.time}</td>
                   <td>{meeting.subject}</td>
-                  <td>{meeting.attendees.join(', ')}</td>
+                  <td>{meeting.attendees.join(", ")}</td>
                   <td>
-                    <button onClick={() => updateMeetingStatus(meeting.meetingId, 'confirmed')}>
+                    <button
+                      onClick={() =>
+                        updateMeetingStatus(meeting.meetingId, "confirmed")
+                      }
+                    >
                       Confirm
                     </button>
-                    <button onClick={() => updateMeetingStatus(meeting.meetingId, 'cancelled')}>
+                    <button
+                      onClick={() =>
+                        updateMeetingStatus(meeting.meetingId, "cancelled")
+                      }
+                    >
                       Cancel
                     </button>
                   </td>
@@ -304,19 +334,19 @@ function PendingMeetings() {
 
 // Admin Login Component
 function AdminLogin() {
-  const [username, setUsername] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [error, setError] = React.useState('');
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [error, setError] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const { signIn } = React.useContext(AuthContext);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     if (!username || !password) {
-      setError('Username and password are required');
+      setError("Username and password are required");
       setIsLoading(false);
       return;
     }
@@ -327,7 +357,7 @@ function AdminLogin() {
         setError(result.error);
       }
     } catch (err) {
-      setError(err.message || 'Failed to sign in');
+      setError(err.message || "Failed to sign in");
     } finally {
       setIsLoading(false);
     }
@@ -359,7 +389,7 @@ function AdminLogin() {
           />
         </div>
         <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Signing in...' : 'Sign In'}
+          {isLoading ? "Signing in..." : "Sign In"}
         </button>
       </form>
     </div>
@@ -368,7 +398,7 @@ function AdminLogin() {
 
 // Admin Dashboard Component
 function AdminDashboard() {
-  const [activeTab, setActiveTab] = React.useState('pending');
+  const [activeTab, setActiveTab] = React.useState("pending");
   const { isAuthenticated, signOut, user } = React.useContext(AuthContext);
 
   if (!isAuthenticated) {
@@ -384,25 +414,25 @@ function AdminDashboard() {
           <button onClick={signOut}>Sign Out</button>
         </div>
       </div>
-      
+
       <div className="dashboard-tabs">
-        <button 
-          className={activeTab === 'pending' ? 'active' : ''} 
-          onClick={() => setActiveTab('pending')}
+        <button
+          className={activeTab === "pending" ? "active" : ""}
+          onClick={() => setActiveTab("pending")}
         >
           Pending Meetings
         </button>
-        <button 
-          className={activeTab === 'calendar' ? 'active' : ''} 
-          onClick={() => setActiveTab('calendar')}
+        <button
+          className={activeTab === "calendar" ? "active" : ""}
+          onClick={() => setActiveTab("calendar")}
         >
           Calendar
         </button>
       </div>
-      
+
       <div className="dashboard-content">
-        {activeTab === 'pending' && <PendingMeetings />}
-        {activeTab === 'calendar' && <MeetingCalendar />}
+        {activeTab === "pending" && <PendingMeetings />}
+        {activeTab === "calendar" && <MeetingCalendar />}
       </div>
     </div>
   );
@@ -410,8 +440,8 @@ function AdminDashboard() {
 
 // Main App Component with Routing
 function App() {
-  const [view, setView] = React.useState('chat'); // 'chat' or 'admin'
-  
+  const [view, setView] = React.useState("chat"); // 'chat' or 'admin'
+
   return (
     <AuthProvider>
       <div className="app-container">
@@ -421,26 +451,26 @@ function App() {
             <h1>Meety</h1>
           </div>
           <div className="nav-links">
-            <button 
-              className={view === 'chat' ? 'active' : ''} 
-              onClick={() => setView('chat')}
+            <button
+              className={view === "chat" ? "active" : ""}
+              onClick={() => setView("chat")}
             >
               Chatbot
             </button>
-            <button 
-              className={view === 'admin' ? 'active' : ''} 
-              onClick={() => setView('admin')}
+            <button
+              className={view === "admin" ? "active" : ""}
+              onClick={() => setView("admin")}
             >
               Admin
             </button>
           </div>
         </nav>
-        
+
         <main className="app-content">
-          {view === 'chat' && <ChatbotInterface />}
-          {view === 'admin' && <AdminDashboard />}
+          {view === "chat" && <ChatbotInterface />}
+          {view === "admin" && <AdminDashboard />}
         </main>
-        
+
         <footer className="app-footer">
           <p>&copy; 2025 Meety - AI-powered Meeting Management</p>
         </footer>
@@ -452,12 +482,12 @@ function App() {
 // Chatbot Interface Component
 function ChatbotInterface() {
   const [messages, setMessages] = React.useState([
-    { 
-      text: "Hello! I'm Meety, your meeting assistant. How can I help you today?", 
-      sender: 'bot' 
-    }
+    {
+      text: "Hello! I'm Meety, your meeting assistant. How can I help you today?",
+      sender: "bot",
+    },
   ]);
-  const [input, setInput] = React.useState('');
+  const [input, setInput] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const messagesEndRef = React.useRef(null);
 
@@ -466,43 +496,52 @@ function ChatbotInterface() {
   }, [messages]);
 
   function scrollToBottom() {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }
 
   async function handleSendMessage(e) {
     e.preventDefault();
-    
+
     if (!input.trim()) return;
-    
+
     // Add user message to chat
-    const userMessage = { text: input, sender: 'user' };
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
+    const userMessage = { text: input, sender: "user" };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
     setIsLoading(true);
-    
+
     try {
       // Send message to chatbot API
-      const response = await fetch('https://ih183j5ibd.execute-api.us-east-1.amazonaws.com/dev/chatbot', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ message: input })
-      });
-      
+      const response = await fetch(
+        "https://ih183j5ibd.execute-api.us-east-1.amazonaws.com/dev/chatbot",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ message: input }),
+        }
+      );
+
       const data = await response.json();
-      
+
       // Add bot response to chat
-      setMessages(prev => [...prev, { 
-        text: data.message || "I'm sorry, I couldn't process your request.", 
-        sender: 'bot' 
-      }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          text: data.message || "I'm sorry, I couldn't process your request.",
+          sender: "bot",
+        },
+      ]);
     } catch (error) {
-      console.error('Error sending message:', error);
-      setMessages(prev => [...prev, { 
-        text: "Sorry, there was an error processing your request.", 
-        sender: 'bot' 
-      }]);
+      console.error("Error sending message:", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          text: "Sorry, there was an error processing your request.",
+          sender: "bot",
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -519,13 +558,15 @@ function ChatbotInterface() {
         {isLoading && (
           <div className="message bot">
             <div className="message-bubble typing">
-              <span>.</span><span>.</span><span>.</span>
+              <span>.</span>
+              <span>.</span>
+              <span>.</span>
             </div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
-      
+
       <form className="chat-input-form" onSubmit={handleSendMessage}>
         <input
           type="text"
@@ -543,7 +584,7 @@ function ChatbotInterface() {
 }
 
 // Render the App
-ReactDOM.render(<App />, document.getElementById('root'));
+ReactDOM.render(<App />, document.getElementById("root"));
 
 // CSS Styles
 const styles = `
@@ -916,6 +957,6 @@ const styles = `
 `;
 
 // Add styles to document
-const styleElement = document.createElement('style');
+const styleElement = document.createElement("style");
 styleElement.textContent = styles;
 document.head.appendChild(styleElement);
