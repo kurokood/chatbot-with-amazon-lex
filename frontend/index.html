@@ -1,16 +1,320 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/x-icon" href="/assets/penguin-ca53156a.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Meety Chatbot</title>
-    <script type="module" crossorigin src="/assets/index-c9e5c74c.js"></script>
-    <link rel="stylesheet" href="/assets/index-0cecbbaf.css">
-    <link rel="stylesheet" href="/assets/index-admin.css">
+
+    <!-- AWS Amplify Library -->
+    <script src="https://cdn.jsdelivr.net/npm/aws-amplify@5.0.4/dist/aws-amplify.min.js"></script>
+
+    <!-- React Libraries -->
+    <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="/assets/index-0cecbbaf.css" />
+    <link rel="stylesheet" href="/assets/index-admin.css" />
+
+    <!-- Inline CSS for React Components -->
+    <style>
+      :root {
+        --primary-color: #4a6fa5;
+        --secondary-color: #166088;
+        --accent-color: #4cb5ab;
+        --text-color: #333;
+        --light-bg: #f5f7fa;
+        --white: #ffffff;
+        --error-color: #e74c3c;
+        --success-color: #2ecc71;
+        --border-radius: 8px;
+        --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: var(--text-color);
+        background-color: var(--light-bg);
+      }
+
+      .app-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      .app-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 2rem;
+        background-color: var(--white);
+        box-shadow: var(--box-shadow);
+      }
+
+      .app-logo {
+        display: flex;
+        align-items: center;
+      }
+
+      .app-logo img {
+        height: 40px;
+        margin-right: 10px;
+      }
+
+      .app-logo h1 {
+        font-size: 1.5rem;
+        color: var(--primary-color);
+      }
+
+      .nav-links button {
+        background: none;
+        border: none;
+        padding: 0.5rem 1rem;
+        margin-left: 1rem;
+        cursor: pointer;
+        font-size: 1rem;
+        color: var(--text-color);
+        transition: color 0.3s;
+      }
+
+      .nav-links button:hover,
+      .nav-links button.active {
+        color: var(--primary-color);
+        font-weight: bold;
+      }
+
+      .app-content {
+        flex: 1;
+        padding: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      .app-footer {
+        padding: 1rem;
+        text-align: center;
+        background-color: var(--white);
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+      }
+
+      /* Chatbot Interface */
+      .chatbot-interface {
+        display: flex;
+        flex-direction: column;
+        height: 70vh;
+        background-color: var(--white);
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        overflow: hidden;
+      }
+
+      .chat-messages {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .message {
+        margin-bottom: 1rem;
+        display: flex;
+      }
+
+      .message.user {
+        justify-content: flex-end;
+      }
+
+      .message-bubble {
+        padding: 0.75rem 1rem;
+        border-radius: 18px;
+        max-width: 70%;
+        word-wrap: break-word;
+      }
+
+      .message.bot .message-bubble {
+        background-color: var(--light-bg);
+        border-bottom-left-radius: 4px;
+      }
+
+      .message.user .message-bubble {
+        background-color: var(--primary-color);
+        color: var(--white);
+        border-bottom-right-radius: 4px;
+      }
+
+      .typing span {
+        display: inline-block;
+        animation: dotTyping 1.5s infinite;
+        margin-right: 3px;
+      }
+
+      .typing span:nth-child(2) {
+        animation-delay: 0.5s;
+      }
+
+      .typing span:nth-child(3) {
+        animation-delay: 1s;
+      }
+
+      @keyframes dotTyping {
+        0% {
+          transform: translateY(0);
+        }
+        25% {
+          transform: translateY(-5px);
+        }
+        50% {
+          transform: translateY(0);
+        }
+      }
+
+      .chat-input-form {
+        display: flex;
+        padding: 1rem;
+        background-color: var(--light-bg);
+      }
+
+      .chat-input-form input {
+        flex: 1;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: var(--border-radius) 0 0 var(--border-radius);
+        font-size: 1rem;
+      }
+
+      .chat-input-form button {
+        padding: 0.75rem 1.5rem;
+        background-color: var(--primary-color);
+        color: var(--white);
+        border: none;
+        border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.3s;
+      }
+
+      .chat-input-form button:hover {
+        background-color: var(--secondary-color);
+      }
+
+      .chat-input-form button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+
+      /* Admin Login */
+      .admin-login {
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 2rem;
+        background-color: var(--white);
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+      }
+
+      .admin-login h2 {
+        margin-bottom: 1.5rem;
+        text-align: center;
+        color: var(--primary-color);
+      }
+
+      .error-message {
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+        background-color: #fde8e8;
+        color: var(--error-color);
+        border-radius: var(--border-radius);
+        text-align: center;
+      }
+
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+      }
+
+      .admin-login button {
+        width: 100%;
+        padding: 0.75rem;
+        background-color: var(--primary-color);
+        color: var(--white);
+        border: none;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.3s;
+      }
+
+      .admin-login button:hover {
+        background-color: var(--secondary-color);
+      }
+
+      .admin-login button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
-    
+
+    <!-- Load and execute the external JSX file -->
+    <script>
+      // Function to load and execute JSX from external file
+      async function loadJSXFile() {
+        try {
+          const response = await fetch("/assets/index-c9e5c74c.js");
+          const jsxCode = await response.text();
+
+          // Create a script element with type="text/babel" to process JSX
+          const script = document.createElement("script");
+          script.type = "text/babel";
+          script.innerHTML = jsxCode;
+          document.body.appendChild(script);
+        } catch (error) {
+          console.error("Failed to load React application:", error);
+          document.getElementById("root").innerHTML = `
+            <div style="padding: 20px; text-align: center; color: #e74c3c;">
+              <h2>Error Loading Application</h2>
+              <p>Failed to load the React application. Please check the console for details.</p>
+              <p>Error: ${error.message}</p>
+            </div>
+          `;
+        }
+      }
+
+      // Load the JSX file when the page is ready
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", loadJSXFile);
+      } else {
+        loadJSXFile();
+      }
+    </script>
   </body>
 </html>

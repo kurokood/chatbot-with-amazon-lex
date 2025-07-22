@@ -55,9 +55,8 @@ After deploying the infrastructure with Terraform, you need to manually configur
    - Slot type: AMAZON.Confirmation
    - Prompt: "Do you want to proceed with the meeting?"
    - Required: Yes
-   
 
-6. Configure fulfillment code hook:
+4. Configure fulfillment code hook:
    - Enable the fulfillment code hook
    - Select the Lambda function "generative-lex-fulfillment"
 

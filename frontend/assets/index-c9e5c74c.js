@@ -1,19 +1,9 @@
-(function(){const n=document.createElement("link").relList;if(n&&n.supports&&n.supports("modulepreload"))return;for(const l of document.querySelectorAll('link[rel="modulepreload"]'))r(l);new MutationObserver(l=>{for(const o of l)if(o.type==="childList")for(const u of o.addedNodes)u.tagName==="LINK"&&u.rel==="modulepreload"&&r(u)}).observe(document,{childList:!0,subtree:!0});function t(l){const o={};return l.integrity&&(o.integrity=l.integrity),l.referrerPolicy&&(o.referrerPolicy=l.referrerPolicy),l.crossOrigin==="use-credentials"?o.credentials="include":l.crossOrigin==="anonymous"?o.credentials="omit":o.credentials="same-origin",o}function r(l){if(l.ep)return;l.ep=!0;const o=t(l);fetch(l.href,o)}})();function tc(e){return e&&e.__esModule&&Object.prototype.hasOwnProperty.call(e,"default")?e.default:e}var Hi={exports:{}},el={},Wi={exports:{}},T={};/**
- * @license React
- * react.production.min.js
- *
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */var Xt=Symbol.for("react.element"),rc=Symbol.for("react.portal"),lc=Symbol.for("react.fragment"),oc=Symbol.for("react.strict_mode"),uc=Symbol.for("react.profiler"),ic=Symbol.for("react.provider"),sc=Symbol.for("react.context"),ac=Symbol.for("react.forward_ref"),cc=Symbol.for("react.suspense"),fc=Symbol.for("react.memo"),dc=Symbol.for("react.lazy"),ju=Symbol.iterator;function pc(e){return e===null||typeof e!="object"?null:(e=ju&&e[ju]||e["@@iterator"],typeof e=="function"?e:null)}var Qi={isMounted:function(){return!1},enqueueForceUpdate:function(){},enqueueReplaceState:function(){},enqueueSetState:function(){}},Ki=Object.assign,Yi={};function ot(e,n,t){this.props=e,this.context=n,this.refs=Yi,this.updater=t||Qi}ot.prototype.isReactComponent={};ot.prototype.setState=function(e,n){if(typeof e!="object"&&typeof e!="function"&&e!=null)throw Error("setState(...): takes an object of state variables to update or a function which returns an object of state variables.");this.updater.enqueueSetState(this,e,n,"setState")};ot.prototype.forceUpdate=function(e){this.updater.enqueueForceUpdate(this,e,"forceUpdate")};function Xi(){}Xi.prototype=ot.prototype;function $o(e,n,t){this.props=e,this.context=n,this.refs=Yi,this.updater=t||Qi}var Ao=$o.prototype=new Xi;Ao.constructor=$o;Ki(Ao,ot.prototype);Ao.isPureReactComponent=!0;
-
 // AWS Amplify and Cognito Authentication
 const awsConfig = {
   Auth: {
     region: 'us-east-1',
-    userPoolId: 'us-east-1_GfzCYQpd3', // Will be replaced with actual pool ID from environment
-    userPoolWebClientId: '3d3rjg2t10vh45cnrm3fkc2egn', // Will be replaced with actual client ID from environment
+    userPoolId: 'us-east-1_GfzCYQpd3',
+    userPoolWebClientId: '3d3rjg2t10vh45cnrm3fkc2egn',
     mandatorySignIn: true,
     authenticationFlowType: 'USER_PASSWORD_AUTH'
   },
@@ -21,11 +11,16 @@ const awsConfig = {
     endpoints: [
       {
         name: "MeetyAPI",
-        endpoint: "https://ih183j5ibd.execute-api.us-east-1.amazonaws.com/dev" // Will be replaced with actual API endpoint
+        endpoint: "https://ih183j5ibd.execute-api.us-east-1.amazonaws.com/dev"
       }
     ]
   }
 };
+
+// Initialize Amplify
+if (typeof Amplify !== 'undefined') {
+  Amplify.configure(awsConfig);
+}
 
 // Auth state management
 const AuthContext = React.createContext(null);
@@ -487,7 +482,7 @@ function ChatbotInterface() {
     
     try {
       // Send message to chatbot API
-      const response = await fetch('https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/dev/chatbot', {
+      const response = await fetch('https://ih183j5ibd.execute-api.us-east-1.amazonaws.com/dev/chatbot', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -547,209 +542,8 @@ function ChatbotInterface() {
   );
 }
 
-// Calendar View Component for Admin Dashboard
-function CalendarView() {
-  const [meetings, setMeetings] = React.useState([]);
-  const [selectedDate, setSelectedDate] = React.useState(new Date());
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState(null);
-  const [selectedMeeting, setSelectedMeeting] = React.useState(null);
-  const { isAuthenticated } = React.useContext(AuthContext);
-
-  React.useEffect(() => {
-    if (isAuthenticated) {
-      fetchMeetings();
-    }
-  }, [isAuthenticated, selectedDate]);
-
-  async function fetchMeetings() {
-    try {
-      setIsLoading(true);
-      const response = await API.get('MeetyAPI', '/meetings', {
-        headers: {
-          Authorization: `Bearer ${(await Auth.currentSession()).getIdToken().getJwtToken()}`
-        }
-      });
-      setMeetings(response);
-      setIsLoading(false);
-    } catch (err) {
-      setError(err.message || "Failed to fetch meetings");
-      setIsLoading(false);
-    }
-  }
-
-  function getDaysInMonth(year, month) {
-    return new Date(year, month + 1, 0).getDate();
-  }
-
-  function getFirstDayOfMonth(year, month) {
-    return new Date(year, month, 1).getDay();
-  }
-
-  function generateCalendarDays() {
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth();
-    const daysInMonth = getDaysInMonth(year, month);
-    const firstDay = getFirstDayOfMonth(year, month);
-    
-    const days = [];
-    
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < firstDay; i++) {
-      days.push({ day: null, meetings: [] });
-    }
-    
-    // Add days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day);
-      const dateString = date.toISOString().split('T')[0];
-      
-      const dayMeetings = meetings.filter(meeting => {
-        const meetingDate = new Date(meeting.date);
-        return meetingDate.getFullYear() === year && 
-               meetingDate.getMonth() === month && 
-               meetingDate.getDate() === day;
-      });
-      
-      days.push({ day, meetings: dayMeetings });
-    }
-    
-    return days;
-  }
-
-  function handlePrevMonth() {
-    setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1));
-  }
-
-  function handleNextMonth() {
-    setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1));
-  }
-
-  function handleMeetingClick(meeting) {
-    setSelectedMeeting(meeting);
-  }
-
-  function closeModal() {
-    setSelectedMeeting(null);
-  }
-
-  async function updateMeetingStatus(meetingId, newStatus) {
-    try {
-      await API.put('MeetyAPI', '/status', {
-        headers: {
-          Authorization: `Bearer ${(await Auth.currentSession()).getIdToken().getJwtToken()}`
-        },
-        body: {
-          meetingId,
-          status: newStatus
-        }
-      });
-      
-      // Close modal and refresh meetings
-      setSelectedMeeting(null);
-      fetchMeetings();
-    } catch (err) {
-      setError(err.message || "Failed to update meeting status");
-    }
-  }
-
-  if (!isAuthenticated) {
-    return <div>Please sign in to view the calendar</div>;
-  }
-
-  if (isLoading) {
-    return <div>Loading calendar...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
-  const calendarDays = generateCalendarDays();
-  const monthNames = ["January", "February", "March", "April", "May", "June",
-                      "July", "August", "September", "October", "November", "December"];
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-  return (
-    <div className="calendar-view-container">
-      <div className="calendar-header">
-        <button onClick={handlePrevMonth}>&lt;</button>
-        <h2>{monthNames[selectedDate.getMonth()]} {selectedDate.getFullYear()}</h2>
-        <button onClick={handleNextMonth}>&gt;</button>
-      </div>
-      
-      <div className="calendar-day-names">
-        {dayNames.map(day => (
-          <div key={day} className="day-name">{day}</div>
-        ))}
-      </div>
-      
-      <div className="calendar-view">
-        {calendarDays.map((day, index) => (
-          <div key={index} className={`calendar-day ${!day.day ? 'empty' : ''}`}>
-            {day.day && (
-              <>
-                <div className="calendar-day-header">{day.day}</div>
-                <div className="calendar-day-content">
-                  {day.meetings.map(meeting => (
-                    <div 
-                      key={meeting.meetingId} 
-                      className={`calendar-meeting meeting-status-${meeting.status.toLowerCase()}`}
-                      onClick={() => handleMeetingClick(meeting)}
-                    >
-                      {meeting.time} - {meeting.subject}
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        ))}
-      </div>
-      
-      {selectedMeeting && (
-        <div className="meeting-modal">
-          <div className="meeting-modal-content">
-            <div className="meeting-modal-header">
-              <h3>Meeting Details</h3>
-              <button className="meeting-modal-close" onClick={closeModal}>&times;</button>
-            </div>
-            <div className="meeting-modal-body">
-              <p><strong>Subject:</strong> {selectedMeeting.subject}</p>
-              <p><strong>Date:</strong> {new Date(selectedMeeting.date).toLocaleDateString()}</p>
-              <p><strong>Time:</strong> {selectedMeeting.time}</p>
-              <p><strong>Attendees:</strong> {selectedMeeting.attendees.join(', ')}</p>
-              <p><strong>Status:</strong> <span className={`meeting-status-${selectedMeeting.status.toLowerCase()}`}>{selectedMeeting.status}</span></p>
-              {selectedMeeting.notes && <p><strong>Notes:</strong> {selectedMeeting.notes}</p>}
-            </div>
-            <div className="meeting-modal-footer">
-              <button onClick={() => updateMeetingStatus(selectedMeeting.meetingId, 'confirmed')}>
-                Confirm
-              </button>
-              <button onClick={() => updateMeetingStatus(selectedMeeting.meetingId, 'cancelled')}>
-                Cancel
-              </button>
-              <button onClick={closeModal}>Close</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Initialize AWS Amplify
-function initializeAmplify() {
-  // This would normally be done with the actual Amplify library
-  console.log("AWS Amplify initialized with config:", awsConfig);
-}
-
 // Render the App
-document.addEventListener('DOMContentLoaded', () => {
-  initializeAmplify();
-  const rootElement = document.getElementById('root');
-  ReactDOM.render(<App />, rootElement);
-});
+ReactDOM.render(<App />, document.getElementById('root'));
 
 // CSS Styles
 const styles = `
@@ -1105,82 +899,6 @@ const styles = `
     cursor: not-allowed;
   }
 
-  /* Calendar View */
-  .calendar-view-container {
-    background-color: var(--white);
-    border-radius: var(--border-radius);
-    padding: 1rem;
-  }
-
-  .calendar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-
-  .calendar-header button {
-    background: none;
-    border: 1px solid #ddd;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
-
-  .calendar-day-names {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-
-  .day-name {
-    text-align: center;
-    font-weight: bold;
-    padding: 8px;
-  }
-
-  .calendar-view {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-  }
-
-  .calendar-day {
-    border: 1px solid #ddd;
-    min-height: 100px;
-    padding: 8px;
-    background-color: var(--white);
-  }
-
-  .calendar-day.empty {
-    background-color: #f9f9f9;
-  }
-
-  .calendar-day-header {
-    font-weight: bold;
-    text-align: right;
-    margin-bottom: 8px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid #eee;
-  }
-
-  .calendar-meeting {
-    margin-bottom: 4px;
-    padding: 4px;
-    border-radius: 4px;
-    background-color: #e3f2fd;
-    font-size: 0.8rem;
-    cursor: pointer;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
   .meeting-status-pending {
     color: #f39c12;
     font-weight: bold;
@@ -1194,79 +912,6 @@ const styles = `
   .meeting-status-cancelled {
     color: #e74c3c;
     font-weight: bold;
-  }
-
-  /* Meeting Modal */
-  .meeting-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-
-  .meeting-modal-content {
-    background-color: white;
-    padding: 2rem;
-    border-radius: 8px;
-    width: 500px;
-    max-width: 90%;
-  }
-
-  .meeting-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-
-  .meeting-modal-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-  }
-
-  .meeting-modal-body {
-    margin-bottom: 1rem;
-  }
-
-  .meeting-modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-  }
-
-  .meeting-modal-footer button:first-child {
-    background-color: var(--success-color);
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
-  .meeting-modal-footer button:nth-child(2) {
-    background-color: var(--error-color);
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
-  .meeting-modal-footer button:last-child {
-    background-color: #ccc;
-    color: var(--text-color);
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
   }
 `;
 
