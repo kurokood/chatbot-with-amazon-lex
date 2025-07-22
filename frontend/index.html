@@ -418,7 +418,7 @@
 
         try {
           console.log("Sending message to chatbot API:", input);
-          
+
           // Try to use the real API with updated CORS configuration
           const response = await fetch(
             "https://ih183j5ibd.execute-api.us-east-1.amazonaws.com/dev/chatbot",
@@ -452,10 +452,10 @@
           ]);
         } catch (error) {
           console.error("Error sending message:", error);
-          
+
           // Fallback to mock responses if API fails
           console.log("Falling back to mock response");
-          
+
           const mockResponses = {
             "hello": "Hello! How can I assist you with your meetings today?",
             "hi": "Hi there! I'm Meety, your meeting assistant. What would you like to do?",
@@ -468,11 +468,11 @@
             "thank you": "You're welcome! Is there anything else I can help you with?",
             "bye": "Goodbye! Have a great day!",
           };
-          
+
           // Show error message
           const errorMessage = "Sorry, there was an error connecting to the chatbot API: " + error.message;
           console.error("API Error:", error);
-          
+
           setMessages((prev) => [
             ...prev,
             {
@@ -627,20 +627,25 @@
     // Test API connectivity on load
     async function testAPIConnectivity() {
       try {
-        console.log("Testing API connectivity...");
+        console.log("Testing API connectivity with direct OPTIONS integration...");
         const response = await fetch("https://ih183j5ibd.execute-api.us-east-1.amazonaws.com/dev/chatbot", {
           method: "OPTIONS",
-          mode: "cors"
+          mode: "cors",
+          headers: {
+            "Origin": "https://chatbot.monvillarin.com",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "Content-Type,Accept"
+          }
         });
         console.log("OPTIONS request status:", response.status);
         console.log("OPTIONS response headers:", [...response.headers.entries()]);
         console.log("API connectivity test successful!");
       } catch (error) {
         console.error("API connectivity test failed:", error);
-        console.log("Please deploy the updated Lambda function and API Gateway configuration.");
+        console.log("Please deploy the updated API Gateway configuration with direct OPTIONS integration.");
       }
     }
-    
+
     // Run connectivity test
     testAPIConnectivity();
 
