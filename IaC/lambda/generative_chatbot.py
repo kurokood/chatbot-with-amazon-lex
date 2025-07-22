@@ -21,13 +21,14 @@ def lambda_handler(event, context):
     """
     logger.info(f"Event received: {json.dumps(event)}")
     
-    # Common CORS headers
+    # Common CORS headers - using wildcard for testing
     cors_headers = {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': 'https://chatbot.monvillarin.com',  # Specific domain
+        'Access-Control-Allow-Origin': '*',  # Use wildcard for testing
         'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,Accept',
         'Access-Control-Allow-Methods': 'OPTIONS,POST,GET',
-        'Access-Control-Allow-Credentials': 'true'
+        # Remove credentials since we're using wildcard origin
+        # 'Access-Control-Allow-Credentials': 'true'
     }
     
     # Handle OPTIONS request (CORS preflight)
