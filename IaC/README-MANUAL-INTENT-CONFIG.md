@@ -16,64 +16,73 @@ After deploying the infrastructure with Terraform, you need to manually configur
 
 1. Go to the "MeetingAssistant" intent
 2. Add the following initial response:
-   - "Sure"
+
+   - "Sure!"
 
 3. Add the following slots:
-   a. **attendeeName**
-      - Slot type: AMAZON.FirstName
-      - Prompt: "What is your name?"
-      - Required: Yes
+   a. **FullName**
 
-   b. **date**
-      - Slot type: AMAZON.Date
-      - Prompt: "What date would you like to schedule the meeting for?"
-      - Required: Yes
+   - Slot type: AMAZON.FirstName
+   - Prompt: "What is your name?"
+   - Required: Yes
 
-   c. **time**
-      - Slot type: AMAZON.Time
-      - Prompt: "What time would you prefer for the meeting?"
-      - Required: Yes
+   b. **MeetingDate**
 
-   d. **meetingTitle**
-      - Slot type: AMAZON.AlphaNumeric
-      - Prompt: "What should I call this meeting or what's it regarding?"
-      - Required: Yes
+   - Slot type: AMAZON.Date
+   - Prompt: "What date would you like to schedule the meeting for?"
+   - Required: Yes
 
-4. Configure confirmation settings:
-   - Enable confirmation
-   - Set the confirmation prompt to: "I'll schedule a meeting on {date} at {time} with {attendeeName} regarding {meetingTitle}. Is that correct?"
-   - Set the confirmation response to: "I've scheduled your meeting. Is there anything else I can help you with?"
-   - Set the decline response to: "I've cancelled the meeting request."
+   c. **MeetingTime**
 
-5. Configure dialog code hook:
-   - Enable the dialog code hook
-   - Select the Lambda function "generative-lex-fulfillment"
+   - Slot type: AMAZON.Time
+   - Prompt: "What time would you prefer for the meeting?"
+   - Required: Yes
+
+   d. **MeetingDuration**
+
+   - Slot type: AMAZON.Duration
+   - Prompt: "How long do you want to meet in minutes? (30 or 60)"
+   - Required: Yes
+
+   e. **AttendeeEmail**
+
+   - Slot type: AMAZON.EmailAddress
+   - Prompt: "Please provide me your email address."
+   - Required: Yes
+
+   f. **confirm**
+
+   - Slot type: AMAZON.Confirmation
+   - Prompt: "Do you want to proceed with the meeting?"
+   - Required: Yes
+   
 
 6. Configure fulfillment code hook:
    - Enable the fulfillment code hook
    - Select the Lambda function "generative-lex-fulfillment"
 
-## 3. CustomFallbackIntent Configuration
+## 4. FallbackIntent Configuration
 
-1. Go to the "CustomFallbackIntent" intent
+1. Go to the "FallbackIntent" intent
 2. Add the following closing response:
    - "Sorry, I did not get it. I am an expert in scheduling meetings. Do you need help with that?"
 
-## 4. Built-in AMAZON.FallbackIntent Configuration
+## 5. Create a Bot Alias
 
-1. Enable the built-in AMAZON.FallbackIntent in your bot
-2. Configure it to redirect to your CustomFallbackIntent
+1. Go to the "Aliases" section of your bot
+2. Create a new alias named "MeetyBot" (update the alias ID in the Lambda environment variables)
+3. Associate the alias with the Lambda function "generative-lex-fulfillment"
 
-## 5. Build and Test the Bot
+## 6. Build and Test the Bot
 
 1. Click on "Build" to build the bot
 2. Go to the "Test" section to test the bot
 3. Test each intent:
    - StartMeety: Type "Hello" or "Hi"
    - MeetingAssistant: Type "I want to schedule a meeting"
-   - CustomFallbackIntent: Type something unrelated to meetings
+   - FallbackIntent: Type something unrelated to meetings
 
-## 6. Troubleshooting
+## 7. Troubleshooting
 
 If you encounter any issues:
 

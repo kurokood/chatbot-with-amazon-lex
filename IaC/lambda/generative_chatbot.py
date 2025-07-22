@@ -21,6 +21,20 @@ def lambda_handler(event, context):
     """
     logger.info(f"Event received: {json.dumps(event)}")
     
+    # Handle OPTIONS request (CORS preflight)
+    if event.get('httpMethod') == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': 'https://chatbot.monvillarin.com',
+                'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token',
+                'Access-Control-Allow-Methods': 'OPTIONS,POST',
+                'Access-Control-Allow-Credentials': 'true'
+            },
+            'body': json.dumps({})
+        }
+    
     try:
         # Get request body
         body = json.loads(event.get('body', '{}'))
@@ -35,7 +49,10 @@ def lambda_handler(event, context):
                 'statusCode': 400,
                 'headers': {
                     'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
+                    'Access-Control-Allow-Origin': 'https://chatbot.monvillarin.com',
+                    'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token',
+                    'Access-Control-Allow-Methods': 'OPTIONS,POST',
+                    'Access-Control-Allow-Credentials': 'true'
                 },
                 'body': json.dumps({'error': 'Message is required'})
             }
@@ -66,7 +83,10 @@ def lambda_handler(event, context):
             'statusCode': 200,
             'headers': {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': 'https://chatbot.monvillarin.com',
+                'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token',
+                'Access-Control-Allow-Methods': 'OPTIONS,POST',
+                'Access-Control-Allow-Credentials': 'true'
             },
             'body': json.dumps(formatted_response)
         }
@@ -77,7 +97,10 @@ def lambda_handler(event, context):
             'statusCode': 500,
             'headers': {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': 'https://chatbot.monvillarin.com',
+                'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token',
+                'Access-Control-Allow-Methods': 'OPTIONS,POST',
+                'Access-Control-Allow-Credentials': 'true'
             },
             'body': json.dumps({'error': str(e)})
         }

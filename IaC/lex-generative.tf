@@ -158,7 +158,6 @@ resource "aws_lexv2models_bot_version" "meety_generative_version" {
   depends_on = [
     aws_lexv2models_intent.start_meety,
     aws_lexv2models_intent.meeting_assistant,
-    aws_lexv2models_intent.custom_fallback_intent,
     aws_lexv2models_bot_locale.meety_generative_locale
   ]
 }
