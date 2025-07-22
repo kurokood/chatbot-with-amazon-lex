@@ -627,12 +627,12 @@
     // Test API connectivity on load
     async function testAPIConnectivity() {
       try {
-        console.log("Testing API connectivity with direct OPTIONS integration...");
+        console.log("Testing API connectivity with updated CORS configuration...");
         const response = await fetch("https://ih183j5ibd.execute-api.us-east-1.amazonaws.com/dev/chatbot", {
           method: "OPTIONS",
           mode: "cors",
           headers: {
-            "Origin": "https://chatbot.monvillarin.com",
+            "Origin": window.location.origin,
             "Access-Control-Request-Method": "POST",
             "Access-Control-Request-Headers": "Content-Type,Accept"
           }
@@ -642,7 +642,7 @@
         console.log("API connectivity test successful!");
       } catch (error) {
         console.error("API connectivity test failed:", error);
-        console.log("Please deploy the updated API Gateway configuration with direct OPTIONS integration.");
+        console.log("Please deploy the updated Lambda function and API Gateway configuration.");
       }
     }
 
