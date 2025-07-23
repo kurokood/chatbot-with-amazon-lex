@@ -522,10 +522,16 @@ function ChatbotInterface() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "Origin": window.location.origin
           },
-          body: JSON.stringify({ message: input }),
-          mode: "cors"
+          body: JSON.stringify({ 
+            message: input,
+            userId: "user-" + Date.now(),
+            sessionAttributes: { source: "web-chat" }
+          }),
+          mode: "cors",
+          credentials: "include"
         }
       );
 

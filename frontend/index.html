@@ -319,10 +319,11 @@
         const response = await fetch(apiUrl, {
           method: "OPTIONS",
           mode: "cors",
+          credentials: "include",
           headers: {
             "Origin": window.location.origin,
             "Access-Control-Request-Method": "POST",
-            "Access-Control-Request-Headers": "Content-Type,Accept"
+            "Access-Control-Request-Headers": "Content-Type,Accept,Origin"
           }
         });
         console.log("OPTIONS request status:", response.status);
