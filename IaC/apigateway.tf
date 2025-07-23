@@ -7,7 +7,7 @@ resource "aws_apigatewayv2_api" "http_api" {
     allow_origins = ["*"]  # Use wildcard for testing
     allow_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     allow_headers = ["Content-Type", "Authorization", "X-Amz-Date", "X-Api-Key", "X-Amz-Security-Token", "Accept", "Origin"]
-    allow_credentials = false  # Set to false when using wildcard origin
+    allow_credentials = false  # Must be false when using wildcard origin
     expose_headers = ["WWW-Authenticate", "Server-Authorization"]
     max_age = 300
   }
@@ -89,17 +89,68 @@ resource "aws_apigatewayv2_route" "generative_chatbot" {
   target    = "integrations/${aws_apigatewayv2_integration.generative_chatbot.id}"
 }
 
-# OPTIONS route for CORS preflight requests
-resource "aws_apigatewayv2_route" "generative_chatbot_options" {
-  api_id    = aws_apigatewayv2_api.http_api.id
-  route_key = "OPTIONS /chatbot"
-  target    = "integrations/${aws_apigatewayv2_integration.generative_chatbot.id}"
-}
-
-# Integration for both POST and OPTIONS /chatbot
+# Integration for POST /chatbot
 resource "aws_apigatewayv2_integration" "generative_chatbot" {
   api_id                 = aws_apigatewayv2_api.http_api.id
   integration_type       = "AWS_PROXY"
   integration_uri        = aws_lambda_function.generative_chatbot_lambda.invoke_arn
   payload_format_version = "2.0"
+}
+
+# Lambda function for OPTIONS requests
+resource "aws_lambda_function" "cors_options_lambda" {
+  function_name = "cors-options-handler"
+  role          = aws_iam_role.generative_lambda_execution_role.arn
+  handler       = "cors_options.lambda_handler"
+  runtime       = "python3.12"
+  timeout       = 10
+
+  filename = "${path.module}/lambda/cors_options.zip"
+}
+
+# Integration for OPTIONS /chatbot
+resource "aws_apigatewayv2_integration" "options_integration" {
+  api_id                 = aws_apigatewayv2_api.http_api.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.cors_options_lambda.invoke_arn
+  integration_method     = "POST"
+  payload_format_version = "2.0"
+}
+
+# OPTIONS route for CORS preflight requests
+resource "aws_apigatewayv2_route" "generative_chatbot_options" {
+  api_id    = aws_apigatewayv2_api.http_api.id
+  route_key = "OPTIONS /chatbot"
+  target    = "integrations/${aws_apigatewayv2_integration.options_integration.id}"
+}
+  integration_method     = "POST"
+  payload_format_version = "2.0"
+}
+
+# Lambda function specifically for handling OPTIONS requests
+resource "aws_lambda_function" "cors_options_lambda" {
+  function_name = "cors-options-handler"
+  role          = aws_iam_role.generative_lambda_execution_role.arn
+  handler       = "cors_options.lambda_handler"
+  runtime       = "python3.12"
+  timeout       = 10
+
+  filename = "${path.module}/lambda/cors_options.zip"
+}
+
+# Lambda permission for API Gateway to invoke the CORS options function
+resource "aws_lambda_permission" "cors_options_lambda_permission" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.cors_options_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.http_api.execution_arn}/*/*"
+}#
+ Lambda permission for API Gateway to invoke the CORS options function
+resource "aws_lambda_permission" "cors_options_lambda_permission" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.cors_options_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.http_api.execution_arn}/*/*"
 }

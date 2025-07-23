@@ -316,16 +316,18 @@
         const apiUrl = window.awsConfig.API.endpoints[0].endpoint + "/chatbot";
         console.log("Using API URL:", apiUrl);
 
+        console.log("Sending OPTIONS request...");
         const response = await fetch(apiUrl, {
           method: "OPTIONS",
           mode: "cors",
-          credentials: "include",
+          // No credentials with wildcard origin
           headers: {
             "Origin": window.location.origin,
             "Access-Control-Request-Method": "POST",
             "Access-Control-Request-Headers": "Content-Type,Accept,Origin"
           }
         });
+        
         console.log("OPTIONS request status:", response.status);
         console.log("OPTIONS response headers:", [...response.headers.entries()]);
         console.log("API connectivity test successful!");

@@ -516,6 +516,7 @@ function ChatbotInterface() {
       const apiUrl = awsConfig.API.endpoints[0].endpoint + "/chatbot";
       console.log("Sending message to API:", apiUrl);
       
+      // Simple fetch without credentials (for wildcard origin)
       const response = await fetch(
         apiUrl,
         {
@@ -530,8 +531,8 @@ function ChatbotInterface() {
             userId: "user-" + Date.now(),
             sessionAttributes: { source: "web-chat" }
           }),
-          mode: "cors",
-          credentials: "include"
+          mode: "cors"
+          // No credentials with wildcard origin
         }
       );
 

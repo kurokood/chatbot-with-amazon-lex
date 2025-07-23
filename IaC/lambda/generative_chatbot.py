@@ -21,17 +21,15 @@ def lambda_handler(event, context):
     """
     logger.info(f"Event received: {json.dumps(event)}")
     
-    # Get the origin from the request headers
-    origin = event.get('headers', {}).get('origin') or event.get('headers', {}).get('Origin') or 'https://chatbot.monvillarin.com'
-    logger.info(f"Origin: {origin}")
+    # Use wildcard origin for testing
     
-    # Common CORS headers - using specific origin
+    # Common CORS headers - using wildcard origin
     cors_headers = {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': origin,  # Use the actual origin
+        'Access-Control-Allow-Origin': '*',  # Use wildcard for testing
         'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,Accept,Origin',
-        'Access-Control-Allow-Methods': 'OPTIONS,POST,GET',
-        'Access-Control-Allow-Credentials': 'true'
+        'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
+        # No credentials with wildcard origin
     }
     
     # Handle OPTIONS request (CORS preflight)
