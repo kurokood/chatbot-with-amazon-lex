@@ -23,27 +23,9 @@ def lambda_handler(event, context):
     
     # Use wildcard origin for testing
     
-    # Common CORS headers - using wildcard origin
     cors_headers = {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',  # Use wildcard for testing
-        'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,Accept,Origin',
-        'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
-        # No credentials with wildcard origin
+        'Content-Type': 'application/json'
     }
-    
-    # Handle OPTIONS request (CORS preflight)
-    if event.get('httpMethod') == 'OPTIONS':
-        logger.info("Handling OPTIONS preflight request")
-        # Return a simple 200 OK with CORS headers for preflight requests
-        return {
-            'statusCode': 200,
-            'headers': cors_headers,
-            'body': json.dumps({
-                'status': 'success',
-                'message': 'CORS preflight successful'
-            })
-        }
     
     try:
         # Get request body
