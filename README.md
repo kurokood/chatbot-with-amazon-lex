@@ -17,7 +17,26 @@ The application uses the following AWS services:
 
 ## Deployment Instructions
 
-### 1. Deploy Infrastructure
+### Option 1: Automated Deployment (Recommended)
+
+You can use the master deployment script to deploy the entire application in one step:
+
+```powershell
+# Run from the project root directory
+./deploy.ps1
+```
+
+This script will:
+1. Deploy the infrastructure with Terraform
+2. Create the Lex bot alias automatically
+3. Update all configuration files
+4. Deploy the frontend to S3
+
+### Option 2: Manual Deployment
+
+If you prefer to deploy the application step by step:
+
+#### 1. Deploy Infrastructure
 
 ```bash
 cd IaC
@@ -25,16 +44,36 @@ terraform init
 terraform apply
 ```
 
-### 2. Manual Configuration Steps
+After the infrastructure is deployed, you'll see the outputs including the Lex bot ID, Cognito IDs, and API Gateway URL.
 
-After applying Terraform, you need to perform some manual steps in the AWS Console:
+### 2. Configuration Steps
 
-#### Create Lex Bot Alias
+After applying Terraform, you can either create the Lex bot alias automatically or manually:
+
+#### Option 1: Automated Bot Alias Creation (Recommended)
+
+Run the provided PowerShell script to automatically create the Lex bot alias:
+
+```powershell
+# Run from the project root directory
+./create-lex-alias.ps1
+```
+
+This script will:
+1. Get the Lex bot ID from Terraform outputs
+2. Find the latest bot version
+3. Create a "prod" alias for the bot
+4. Update all configuration files automatically
+
+#### Option 2: Manual Bot Alias Creation
+
+If you prefer to create the bot alias manually:
 
 1. Go to the AWS Console > Amazon Lex > Bots > MeetyGenerativeBot
 2. Go to the Aliases tab and create a new alias named "prod"
 3. Associate it with the version created by Terraform
 4. Enable the generative AI features in the console
+5. Run the update-config.ps1 script to update configuration files
 
 #### Update Configuration Files
 
@@ -46,18 +85,26 @@ After creating the resources, you can use the provided PowerShell script to upda
 ```
 
 The script will:
-1. Get the Terraform outputs (Lex Bot ID, Cognito Identity Pool ID)
+1. Get the Terraform outputs:
+   - Lex Bot ID
+   - Cognito Identity Pool ID
+   - Cognito User Pool ID
+   - Cognito User Pool Web Client ID
+   - API Gateway endpoint URL
 2. Prompt you for the manually created Bot Alias ID
 3. Update the following files with the actual IDs:
-   - `frontend/index.html`
-   - `IaC/variables.tf`
+   - `frontend/index.html` - All AWS resource IDs and endpoints
+   - `IaC/variables.tf` - Lex Bot ID and Bot Alias ID
 
 Alternatively, you can manually update the following files:
 
 1. Update `frontend/index.html`:
-   - Replace `XXXXXXXXXX` in the `botId` field with the actual MeetyGenerativeBot ID
-   - Replace `XXXXXXXXXX` in the `botAliasId` field with the manually created "prod" alias ID
-   - Replace `us-east-1:XXXXXXXXXX` in the `IdentityPoolId` field with the actual Cognito Identity Pool ID
+   - Replace the `botId` field with the actual MeetyGenerativeBot ID
+   - Replace the `botAliasId` field with the manually created "prod" alias ID
+   - Replace the `identityPoolId` field with the actual Cognito Identity Pool ID
+   - Replace the `userPoolId` field with the actual Cognito User Pool ID
+   - Replace the `userPoolWebClientId` field with the actual Cognito User Pool Web Client ID
+   - Replace the API Gateway `endpoint` field with the actual API Gateway URL
 
 2. Update `IaC/variables.tf`:
    - Update `lex_bot_id` with the actual MeetyGenerativeBot ID
@@ -68,7 +115,13 @@ Alternatively, you can manually update the following files:
 Upload the frontend files to the S3 bucket:
 
 ```bash
-aws s3 sync frontend/ s3://your-bucket-name/ --delete
+# Get the S3 bucket name from the CloudFront distribution
+$cloudFrontUrl = terraform -chdir=IaC output -json | ConvertFrom-Json | Select-Object -ExpandProperty cloudfront_distribution_url | Select-Object -ExpandProperty value
+$s3BucketName = aws cloudfront get-distribution --id $(aws cloudfront list-distributions --query "DistributionList.Items[?DomainName=='$cloudFrontUrl'].Id" --output text) --query "Distribution.DistributionConfig.Origins.Items[0].DomainName" --output text
+$s3BucketName = $s3BucketName -replace "\.s3\.amazonaws\.com", ""
+
+# Deploy to S3
+aws s3 sync frontend/ s3://$s3BucketName/ --delete
 ```
 
 ## Usage
