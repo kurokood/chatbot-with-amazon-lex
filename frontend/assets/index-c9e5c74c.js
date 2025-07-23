@@ -2,8 +2,8 @@
 const awsConfig = window.awsConfig || {
   Auth: {
     region: "us-east-1",
-    userPoolId: "us-east-1_8zTUU9NQO",
-    userPoolWebClientId: "57nib32g1o9mn5g0pmutnvb852",
+    userPoolId: "us-east-1_veGqpCmbU",
+    userPoolWebClientId: "15n778uqrdpa8e5284sbogfe9a",
     mandatorySignIn: true,
     authenticationFlowType: "USER_PASSWORD_AUTH",
   },
@@ -11,7 +11,7 @@ const awsConfig = window.awsConfig || {
     endpoints: [
       {
         name: "MeetyAPI",
-        endpoint: "https://oum5xgcpjb.execute-api.us-east-1.amazonaws.com/dev",
+        endpoint: "https://d3dm2l1zg4.execute-api.us-east-1.amazonaws.com/dev",
       },
     ],
   },

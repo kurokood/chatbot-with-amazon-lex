@@ -21,11 +21,21 @@ def lambda_handler(event, context):
     """
     logger.info(f"Event received: {json.dumps(event)}")
     
-    # Use wildcard origin for testing
-    
     cors_headers = {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': 'https://chatbot.monvillarin.com',
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,Accept,Origin',
+        'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
     }
+    
+    # Handle OPTIONS request (CORS preflight)
+    if event.get('requestContext', {}).get('http', {}).get('method') == 'OPTIONS':
+        logger.info("Handling OPTIONS preflight request")
+        return {
+            'statusCode': 200,
+            'headers': cors_headers,
+            'body': json.dumps({'status': 'success', 'message': 'CORS preflight successful'})
+        }
     
     try:
         # Get request body
