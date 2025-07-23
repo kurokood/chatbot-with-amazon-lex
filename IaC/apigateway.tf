@@ -4,7 +4,7 @@ resource "aws_apigatewayv2_api" "http_api" {
   description   = "Meeti API"
 
   cors_configuration {
-    allow_origins     = ["https://chatbot.monvillarin.com", "*"]
+    allow_origins     = ["https://chatbot.monvillarin.com"]
     allow_methods     = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     allow_headers     = ["Content-Type", "Authorization", "X-Amz-Date", "X-Api-Key", "X-Amz-Security-Token", "Accept", "Origin"]
     allow_credentials = true

@@ -1,5 +1,6 @@
 # Generate unique bucket suffix
 data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
 
 locals {
   bucket_suffix = substr(data.aws_caller_identity.current.account_id, -8, 8)

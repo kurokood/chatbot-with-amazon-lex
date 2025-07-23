@@ -1,118 +1,131 @@
-# Meety - AI-Powered Meeting Assistant
+# Meety - AI-powered Meeting Management
 
-Meety is a meeting management chatbot application that helps users manage and track meetings through conversational AI powered by Amazon Lex and AWS services.
+Meety is a meeting management chatbot application that helps users manage and track meetings through conversational AI powered by Amazon Lex V2 and Amazon Bedrock.
 
 ## Architecture
 
-This application uses the following AWS services:
+The application uses the following AWS services:
 
-- **Amazon Lex v2** - Conversational AI chatbot
-- **AWS Lambda** - Serverless compute for backend logic
-- **Amazon API Gateway** - HTTP API for frontend-backend communication
-- **Amazon DynamoDB** - NoSQL database for meeting data
-- **Amazon Cognito** - User authentication and authorization
-- **Amazon S3** - Static website hosting
-- **Amazon CloudFront** - CDN for frontend distribution
-- **Amazon Route53** - DNS management
-
-## Features
-
-- Meeting scheduling through natural language conversations
-- Meeting status tracking (pending, confirmed, etc.)
-- User authentication and authorization
-- Web-based frontend interface
+- **Amazon Cognito**: User authentication and authorization
+- **Amazon Lex V2**: Conversational AI chatbot with generative capabilities
+- **Amazon Bedrock**: Generative AI foundation models
+- **Amazon DynamoDB**: NoSQL database for meeting data
+- **Amazon S3**: Static website hosting
+- **Amazon CloudFront**: CDN for frontend distribution
+- **Amazon API Gateway**: HTTP API for backend services
+- **AWS Lambda**: Serverless compute for backend logic
 
 ## Deployment Instructions
 
-### Prerequisites
+### 1. Deploy Infrastructure
 
-1. AWS CLI installed and configured
-2. Terraform installed
-3. Node.js and npm installed (for frontend development)
+```bash
+cd IaC
+terraform init
+terraform apply
+```
 
-### Deploying the Infrastructure
+### 2. Manual Configuration Steps
 
-1. Navigate to the IaC directory:
-   ```
-   cd IaC
-   ```
+After applying Terraform, you need to perform some manual steps in the AWS Console:
 
-2. Initialize Terraform:
-   ```
-   terraform init
-   ```
+#### Create Lex Bot Alias
 
-3. Apply the Terraform configuration:
-   ```
-   terraform apply
-   ```
+1. Go to the AWS Console > Amazon Lex > Bots > MeetyGenerativeBot
+2. Go to the Aliases tab and create a new alias named "prod"
+3. Associate it with the version created by Terraform
+4. Enable the generative AI features in the console
 
-4. Follow the manual configuration steps in the IaC/README.md file to complete the setup.
+#### Update Configuration Files
 
-### Deploying the Frontend
+After creating the resources, you can use the provided PowerShell script to update the configuration files:
 
-1. Update the frontend configuration with the API endpoint and Cognito user pool details:
-   ```
-   cd frontend
-   ```
+```powershell
+# Run from the project root directory
+./update-config.ps1
+```
 
-2. Build and deploy the frontend:
-   ```
-   npm install
-   npm run build
-   ```
+The script will:
+1. Get the Terraform outputs (Lex Bot ID, Cognito Identity Pool ID)
+2. Prompt you for the manually created Bot Alias ID
+3. Update the following files with the actual IDs:
+   - `frontend/index.html`
+   - `IaC/variables.tf`
 
-3. Upload the build artifacts to the S3 bucket:
-   ```
-   aws s3 sync build/ s3://YOUR_S3_BUCKET_NAME --delete
-   ```
+Alternatively, you can manually update the following files:
 
-4. Create a CloudFront invalidation to update the CDN:
-   ```
-   aws cloudfront create-invalidation --distribution-id YOUR_DISTRIBUTION_ID --paths "/*"
-   ```
+1. Update `frontend/index.html`:
+   - Replace `XXXXXXXXXX` in the `botId` field with the actual MeetyGenerativeBot ID
+   - Replace `XXXXXXXXXX` in the `botAliasId` field with the manually created "prod" alias ID
+   - Replace `us-east-1:XXXXXXXXXX` in the `IdentityPoolId` field with the actual Cognito Identity Pool ID
 
-## Using the Chatbot
+2. Update `IaC/variables.tf`:
+   - Update `lex_bot_id` with the actual MeetyGenerativeBot ID
+   - Update `lex_bot_alias_id` with the manually created "prod" alias ID
 
-1. Open the frontend application in your browser
-2. Sign in with your Cognito credentials
-3. Use the chatbot to schedule meetings with natural language:
-   - "I want to schedule a meeting"
-   - "Book a meeting with John tomorrow at 2pm"
-   - "Schedule a call with Sarah on Friday"
+### 3. Deploy Frontend
 
-4. The chatbot will guide you through the process of scheduling a meeting, asking for any missing information.
+Upload the frontend files to the S3 bucket:
 
-## Development
+```bash
+aws s3 sync frontend/ s3://your-bucket-name/ --delete
+```
 
-### Local Development
+## Usage
 
-1. Clone the repository
-2. Install dependencies:
-   ```
-   cd frontend
-   npm install
-   ```
+1. Access the application through the CloudFront URL provided in the Terraform output
+2. Use the chatbot interface to manage meetings through natural language
+3. Sign in to the admin panel to view and manage meetings
 
-3. Start the development server:
-   ```
-   npm start
-   ```
+## Features
 
-### Updating the Lambda Functions
+- Meeting scheduling and status management
+- AI-powered chatbot interface using Amazon Lex with generative capabilities
+- User authentication and authorization
+- Meeting status tracking (pending, confirmed, etc.)
+- Web-based frontend interface
 
-1. Edit the Lambda function code in the `IaC/lambda` directory
-2. Package the Lambda function:
-   ```
-   cd IaC
-   zip -j lambda/function_name.zip lambda/function_name.py
-   ```
+## Architecture Diagram
 
-3. Apply the changes with Terraform:
-   ```
-   terraform apply
-   ```
+```
+┌─────────────┐     ┌───────────────┐     ┌───────────────┐
+│             │     │               │     │               │
+│  Frontend   │────▶│  Amazon       │────▶│  Amazon       │
+│  (React)    │     │  Cognito      │     │  Lex V2       │
+│             │     │               │     │               │
+└─────────────┘     └───────────────┘     └───────┬───────┘
+                                                  │
+                                                  ▼
+                                          ┌───────────────┐
+                                          │               │
+                                          │  Amazon       │
+                                          │  Bedrock      │
+                                          │               │
+                                          └───────────────┘
+```
 
-## License
+## Direct Lex Integration
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This application uses direct integration between the frontend and Amazon Lex V2 using the AWS SDK, eliminating the need for API Gateway and Lambda intermediaries for the chatbot functionality. This approach:
+
+1. Eliminates CORS issues
+2. Reduces latency
+3. Simplifies the architecture
+
+The frontend authenticates with Amazon Cognito and uses the credentials to directly access Amazon Lex V2 through the AWS SDK.
+
+### Removing API Gateway Resources
+
+If you want to completely remove the API Gateway and Lambda resources for the chatbot (since they're no longer needed with direct Lex integration), you can use the provided cleanup script:
+
+```powershell
+# Run from the project root directory
+./cleanup-api-gateway.ps1
+```
+
+This script will:
+1. Remove the generative_chatbot route and integration from apigateway.tf
+2. Remove the generative_chatbot Lambda function from lambda-generative.tf
+3. Remove the generative_chatbot.py and generative_chatbot.zip files
+
+After running the script, you'll need to run `terraform apply` to apply these changes.

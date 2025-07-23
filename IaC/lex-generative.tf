@@ -163,4 +163,9 @@ resource "aws_lexv2models_bot_version" "meety_generative_version" {
 }
 
 # Bot alias needs to be created manually in AWS Console
-# aws_lexv2models_bot_alias not supported in current provider version
+# The AWS provider doesn't support the aws_lexv2models_bot_alias resource type
+# Steps to create the bot alias:
+# 1. Go to the AWS Console > Amazon Lex > Bots > MeetyGenerativeBot
+# 2. Go to Aliases tab and create a new alias named "prod"
+# 3. Associate it with the version created by Terraform
+# 4. Enable the generative AI features in the console

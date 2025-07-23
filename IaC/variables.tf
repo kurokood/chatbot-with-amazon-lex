@@ -34,5 +34,19 @@ variable "acm_certificate_arn" {
   default     = "arn:aws:acm:us-east-1:026045577315:certificate/6f9106a0-d143-4bdb-8d9c-60ec70b4e3ee"
 }
 
-# Data sources moved to s3-cloudfront.tf to avoid duplication
-data "aws_region" "current" {}
+# Lex bot configuration
+variable "lex_bot_id" {
+  description = "The ID of the Lex V2 bot"
+  type        = string
+  default     = "XXXXXXXXXX" # Replace with your actual Bot ID
+}
+
+variable "lex_bot_alias_id" {
+  description = "The ID of the Lex V2 bot alias"
+  type        = string
+  default     = "XXXXXXXXXX" # Replace with your actual Bot Alias ID
+}
+
+# Data sources are defined in s3-cloudfront.tf
+# data "aws_region" "current" {} - already defined in s3-cloudfront.tf
+# data "aws_caller_identity" "current" {} - already defined in s3-cloudfront.tf

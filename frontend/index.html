@@ -10,6 +10,9 @@
   <!-- AWS Amplify Library -->
   <script src="https://cdn.jsdelivr.net/npm/aws-amplify@5.0.4/dist/aws-amplify.min.js"></script>
 
+  <!-- AWS SDK for JavaScript - Used for direct Lex V2 integration -->
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1001.0.min.js"></script>
+
   <!-- React Libraries -->
   <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
@@ -294,54 +297,108 @@
     window.awsConfig = {
       Auth: {
         region: "us-east-1",
-        userPoolId: "us-east-1_veGqpCmbU",
-        userPoolWebClientId: "15n778uqrdpa8e5284sbogfe9a",
+        userPoolId: "us-east-1_WJztYRsz7",
+        userPoolWebClientId: "3i23p12kbc1btop16r83cr8hek",
         mandatorySignIn: true,
         authenticationFlowType: "USER_PASSWORD_AUTH",
       },
+      // API Gateway is still used for admin dashboard functionality (meetings management)
+      // The chatbot now uses direct Lex integration via AWS SDK
       API: {
         endpoints: [
           {
             name: "MeetyAPI",
-            endpoint: "https://d3dm2l1zg4.execute-api.us-east-1.amazonaws.com/dev",
+            endpoint: "https://juhxfon53b.execute-api.us-east-1.amazonaws.com/dev",
           },
         ],
       },
+      // Lex V2 configuration - Generative AI Bot
+      lex: {
+        // After applying Terraform, replace these values with the actual IDs from the AWS Console
+        // You can find the Bot ID in the AWS Console > Amazon Lex > Bots > MeetyGenerativeBot
+        // The Bot Alias ID needs to be created manually in the AWS Console
+
+
+        botId: "LU4HOLF1OV", // Replace with the MeetyGenerativeBot ID
+        botAliasId: "QVALZCHYCY", // Replace with the manually created "prod" alias ID
+        localeId: "en_US",
+        region: "us-east-1"
+      }
     };
 
-    // Test API connectivity on load
-    async function testAPIConnectivity() {
-      try {
-        console.log("Testing API connectivity...");
-        const apiUrl = window.awsConfig.API.endpoints[0].endpoint + "/chatbot";
-        console.log("Using API URL:", apiUrl);
+    // Configure AWS SDK
+    AWS.config.region = 'us-east-1';
 
-        console.log("Sending OPTIONS request...");
-        const response = await fetch(apiUrl, {
-          method: "OPTIONS",
-          mode: "cors",
-          // No credentials with wildcard origin
-          headers: {
-            "Origin": window.location.origin,
-            "Access-Control-Request-Method": "POST",
-            "Access-Control-Request-Headers": "Content-Type,Accept,Origin"
-          }
+    // Function to set up AWS credentials after user authentication
+    window.setupAWSCredentials = async function () {
+      try {
+        if (typeof Auth !== 'undefined') {
+          const session = await Auth.currentSession();
+          const idToken = session.getIdToken().getJwtToken();
+
+          AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+            // After applying Terraform, replace this with the actual Cognito Identity Pool ID
+            // You can find it in the AWS Console or in the Terraform output
+
+            IdentityPoolId: 'us-east-1:8543e4cc-c39e-48f0-b0c2-569da7efaa5b', // Replace with your Cognito Identity Pool ID
+            Logins: {
+              [`cognito-idp.us-east-1.amazonaws.com/${awsConfig.Auth.userPoolId}`]: idToken
+            }
+          });
+
+          // Refresh credentials
+          await new Promise((resolve, reject) => {
+            AWS.config.credentials.refresh(err => {
+              if (err) {
+                console.error("Error refreshing credentials:", err);
+                reject(err);
+              } else {
+                console.log("AWS credentials refreshed successfully");
+                resolve();
+              }
+            });
+          });
+
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error("Error setting up AWS credentials:", error);
+        return false;
+      }
+    };
+
+    // Test AWS SDK connectivity on load
+    function testLexConnectivity() {
+      try {
+        console.log("Testing AWS Lex connectivity...");
+
+        if (typeof AWS === 'undefined') {
+          console.error("AWS SDK not loaded");
+          return;
+        }
+
+        console.log("AWS SDK loaded successfully");
+        console.log("Lex configuration:", window.awsConfig.lex);
+
+        // Initialize Lex client
+        const lexClient = new AWS.LexRuntimeV2({
+          region: window.awsConfig.lex.region
         });
 
-        console.log("OPTIONS request status:", response.status);
-        console.log("OPTIONS response headers:", [...response.headers.entries()]);
-        console.log("API connectivity test successful!");
+        console.log("Lex client initialized successfully:", lexClient);
+        console.log("AWS SDK connectivity test successful!");
       } catch (error) {
-        console.error("API connectivity test failed:", error);
+        console.error("AWS SDK connectivity test failed:", error);
       }
     }
 
-    // Run connectivity test
-    testAPIConnectivity();
+    // Run connectivity test after a short delay to ensure AWS SDK is loaded
+    setTimeout(testLexConnectivity, 1000);
   </script>
 
-  <!-- Load the external JS file with Babel -->
-  <script type="text/babel" src="/assets/index-c9e5c74c.js"></script>
+  <!-- Load the external JS file with direct Lex integration -->
+  <script type="text/babel" src="/assets/index-direct-lex.js"></script>
 </body>
 
 </html>
