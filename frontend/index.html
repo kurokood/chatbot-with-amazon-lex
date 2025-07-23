@@ -288,14 +288,14 @@
 <body>
   <div id="root"></div>
 
-  <!-- React Application (embedded to avoid 404 issues) -->
-  <script type="text/babel">
-    // AWS Amplify and Cognito Authentication
-    const awsConfig = {
+  <!-- Load the external JS file with Babel -->
+  <script>
+    // Configure AWS Amplify with the correct endpoint
+    window.awsConfig = {
       Auth: {
         region: "us-east-1",
-        userPoolId: "us-east-1_GfzCYQpd3",
-        userPoolWebClientId: "3d3rjg2t10vh45cnrm3fkc2egn",
+        userPoolId: "us-east-1_8zTUU9NQO",
+        userPoolWebClientId: "57nib32g1o9mn5g0pmutnvb852",
         mandatorySignIn: true,
         authenticationFlowType: "USER_PASSWORD_AUTH",
       },
@@ -303,332 +303,20 @@
         endpoints: [
           {
             name: "MeetyAPI",
-            endpoint: "https://ih183j5ibd.execute-api.us-east-1.amazonaws.com/dev",
+            endpoint: "https://oum5xgcpjb.execute-api.us-east-1.amazonaws.com/dev",
           },
         ],
       },
     };
 
-    // Initialize Amplify
-    if (typeof Amplify !== "undefined") {
-      Amplify.configure(awsConfig);
-    }
-
-    // Auth state management
-    const AuthContext = React.createContext(null);
-
-    function AuthProvider({ children }) {
-      const [authState, setAuthState] = React.useState({
-        isAuthenticated: false,
-        user: null,
-        isLoading: true,
-      });
-
-      React.useEffect(() => {
-        checkAuthState();
-      }, []);
-
-      async function checkAuthState() {
-        try {
-          const user = await Auth.currentAuthenticatedUser();
-          setAuthState({
-            isAuthenticated: true,
-            user,
-            isLoading: false,
-          });
-        } catch (error) {
-          setAuthState({
-            isAuthenticated: false,
-            user: null,
-            isLoading: false,
-          });
-        }
-      }
-
-      async function signIn(username, password) {
-        try {
-          const user = await Auth.signIn(username, password);
-          setAuthState({
-            isAuthenticated: true,
-            user,
-            isLoading: false,
-          });
-          return { success: true };
-        } catch (error) {
-          return {
-            success: false,
-            error: error.message || "Failed to sign in",
-          };
-        }
-      }
-
-      async function signOut() {
-        try {
-          await Auth.signOut();
-          setAuthState({
-            isAuthenticated: false,
-            user: null,
-            isLoading: false,
-          });
-          return { success: true };
-        } catch (error) {
-          return {
-            success: false,
-            error: error.message || "Failed to sign out",
-          };
-        }
-      }
-
-      return (
-        <AuthContext.Provider value={{ ...authState, signIn, signOut }}>
-          {children}
-        </AuthContext.Provider>
-      );
-    }
-
-    // Chatbot Interface Component
-    function ChatbotInterface() {
-      const [messages, setMessages] = React.useState([
-        {
-          text: "Hello! I'm Meety, your meeting assistant. How can I help you today?",
-          sender: "bot",
-        },
-      ]);
-      const [input, setInput] = React.useState("");
-      const [isLoading, setIsLoading] = React.useState(false);
-      const messagesEndRef = React.useRef(null);
-
-      React.useEffect(() => {
-        scrollToBottom();
-      }, [messages]);
-
-      function scrollToBottom() {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }
-
-      async function handleSendMessage(e) {
-        e.preventDefault();
-
-        if (!input.trim()) return;
-
-        const userMessage = { text: input, sender: "user" };
-        setMessages((prev) => [...prev, userMessage]);
-        setInput("");
-        setIsLoading(true);
-
-        try {
-          console.log("Sending message to chatbot API:", input);
-
-          // Try to use the real API with updated CORS configuration
-          const response = await fetch(
-            "https://ih183j5ibd.execute-api.us-east-1.amazonaws.com/dev/chatbot",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-              },
-              body: JSON.stringify({ message: input }),
-              mode: "cors"  // Use CORS mode without credentials
-            }
-          );
-
-          console.log("Response status:", response.status);
-          console.log("Response headers:", [...response.headers.entries()]);
-
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-
-          const data = await response.json();
-          console.log("Response data:", data);
-
-          setMessages((prev) => [
-            ...prev,
-            {
-              text: data.message || "I'm sorry, I couldn't process your request.",
-              sender: "bot",
-            },
-          ]);
-        } catch (error) {
-          console.error("Error sending message:", error);
-
-          // Fallback to mock responses if API fails
-          console.log("Falling back to mock response");
-
-          const mockResponses = {
-            "hello": "Hello! How can I assist you with your meetings today?",
-            "hi": "Hi there! I'm Meety, your meeting assistant. What would you like to do?",
-            "schedule": "I'd be happy to help you schedule a meeting. What date and time works for you?",
-            "meeting": "Would you like to schedule a new meeting or check your existing meetings?",
-            "help": "I can help you with scheduling meetings, checking meeting status, or managing your calendar. What would you like to do?",
-            "status": "To check the status of your meetings, please log in to the admin panel.",
-            "cancel": "If you'd like to cancel a meeting, please use the admin panel or tell me which meeting you'd like to cancel.",
-            "thanks": "You're welcome! Is there anything else I can help you with?",
-            "thank you": "You're welcome! Is there anything else I can help you with?",
-            "bye": "Goodbye! Have a great day!",
-          };
-
-          // Show error message
-          const errorMessage = "Sorry, there was an error connecting to the chatbot API: " + error.message;
-          console.error("API Error:", error);
-
-          setMessages((prev) => [
-            ...prev,
-            {
-              text: errorMessage,
-              sender: "bot",
-            },
-          ]);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-
-      return (
-        <div className="chatbot-interface">
-          <div className="chat-messages">
-            {messages.map((msg, index) => (
-              <div key={index} className={`message ${msg.sender}`}>
-                <div className="message-bubble">{msg.text}</div>
-              </div>
-            ))}
-            {isLoading && (
-              <div className="message bot">
-                <div className="message-bubble typing">
-                  <span>.</span><span>.</span><span>.</span>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          <form className="chat-input-form" onSubmit={handleSendMessage}>
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message here..."
-              disabled={isLoading}
-            />
-            <button type="submit" disabled={isLoading || !input.trim()}>
-              Send
-            </button>
-          </form>
-        </div>
-      );
-    }
-
-    // Admin Login Component
-    function AdminLogin() {
-      const [username, setUsername] = React.useState("");
-      const [password, setPassword] = React.useState("");
-      const [error, setError] = React.useState("");
-      const [isLoading, setIsLoading] = React.useState(false);
-      const { signIn } = React.useContext(AuthContext);
-
-      async function handleSubmit(e) {
-        e.preventDefault();
-        setIsLoading(true);
-        setError("");
-
-        if (!username || !password) {
-          setError("Username and password are required");
-          setIsLoading(false);
-          return;
-        }
-
-        try {
-          const result = await signIn(username, password);
-          if (!result.success) {
-            setError(result.error);
-          }
-        } catch (err) {
-          setError(err.message || "Failed to sign in");
-        } finally {
-          setIsLoading(false);
-        }
-      }
-
-      return (
-        <div className="admin-login">
-          <h2>Admin Login</h2>
-          {error && <div className="error-message">{error}</div>}
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="username">Username</label>
-              <input
-                type="text"
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-            <button type="submit" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign In"}
-            </button>
-          </form>
-        </div>
-      );
-    }
-
-    // Main App Component
-    function App() {
-      const [view, setView] = React.useState("chat");
-
-      return (
-        <AuthProvider>
-          <div className="app-container">
-            <nav className="app-nav">
-              <div className="app-logo">
-                <img src="/assets/penguin-ca53156a.png" alt="Meety Logo" />
-                <h1>Meety</h1>
-              </div>
-              <div className="nav-links">
-                <button
-                  className={view === "chat" ? "active" : ""}
-                  onClick={() => setView("chat")}
-                >
-                  Chatbot
-                </button>
-                <button
-                  className={view === "admin" ? "active" : ""}
-                  onClick={() => setView("admin")}
-                >
-                  Admin
-                </button>
-              </div>
-            </nav>
-
-            <main className="app-content">
-              {view === "chat" && <ChatbotInterface />}
-              {view === "admin" && <AdminLogin />}
-            </main>
-
-            <footer className="app-footer">
-              <p>&copy; 2025 Meety - AI-powered Meeting Management</p>
-            </footer>
-          </div>
-        </AuthProvider>
-      );
-    }
-
     // Test API connectivity on load
     async function testAPIConnectivity() {
       try {
-        console.log("Testing API connectivity with updated CORS configuration...");
-        const response = await fetch("https://ih183j5ibd.execute-api.us-east-1.amazonaws.com/dev/chatbot", {
+        console.log("Testing API connectivity...");
+        const apiUrl = window.awsConfig.API.endpoints[0].endpoint + "/chatbot";
+        console.log("Using API URL:", apiUrl);
+
+        const response = await fetch(apiUrl, {
           method: "OPTIONS",
           mode: "cors",
           headers: {
@@ -642,16 +330,15 @@
         console.log("API connectivity test successful!");
       } catch (error) {
         console.error("API connectivity test failed:", error);
-        console.log("Please deploy the updated Lambda function and API Gateway configuration.");
       }
     }
 
     // Run connectivity test
     testAPIConnectivity();
-
-    // Render the App
-    ReactDOM.render(<App />, document.getElementById("root"));
   </script>
+
+  <!-- Load the external JS file with Babel -->
+  <script type="text/babel" src="/assets/index-c9e5c74c.js"></script>
 </body>
 
 </html>

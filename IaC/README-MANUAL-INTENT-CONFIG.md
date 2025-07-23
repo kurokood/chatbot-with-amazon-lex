@@ -10,7 +10,7 @@ After deploying the infrastructure with Terraform, you need to manually configur
 4. Add the following closing response:
    - "Hey, I'm meety, the chatbot to help scheduling meetings. How can I help you?"
    - "Hello, how may I assist you?"
-   - "Hello, how can I help you?"
+   - "Hi, how can I help you?"
 
 ## 2. MeetingAssistant Intent Configuration
 
@@ -64,7 +64,7 @@ After deploying the infrastructure with Terraform, you need to manually configur
 
 1. Go to the "FallbackIntent" intent
 2. Add the following closing response:
-   - "Sorry, I did not get it. I am an expert in scheduling meetings. Do you need help with that?"
+   - "Sorry, I did not get it. Could you try again?"
 
 ## 5. Create a Bot Alias
 

@@ -124,7 +124,7 @@ resource "aws_lambda_permission" "generative_lex_lambda_permission" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.generative_lex_lambda.function_name
   principal     = "lexv2.amazonaws.com"
-  source_arn    = "arn:aws:lex:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:bot-alias/${aws_lexv2models_bot.meety_generative_bot.id}/TSTALIASID"
+  source_arn    = "arn:aws:lex:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:bot-alias/${aws_lexv2models_bot.meety_generative_bot.id}/TSTALIASID/*"
 }
 
 # Enhanced Chatbot Lambda for API Gateway with Generative AI

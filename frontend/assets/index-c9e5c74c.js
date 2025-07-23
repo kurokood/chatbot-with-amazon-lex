@@ -1,5 +1,5 @@
-// AWS Amplify and Cognito Authentication
-const awsConfig = {
+// Use the AWS config from the HTML file
+const awsConfig = window.awsConfig || {
   Auth: {
     region: "us-east-1",
     userPoolId: "us-east-1_8zTUU9NQO",
@@ -20,6 +20,7 @@ const awsConfig = {
 // Initialize Amplify
 if (typeof Amplify !== "undefined") {
   Amplify.configure(awsConfig);
+  console.log("Amplify configured with:", awsConfig);
 }
 
 // Auth state management
@@ -511,15 +512,20 @@ function ChatbotInterface() {
     setIsLoading(true);
 
     try {
-      // Send message to chatbot API
+      // Send message to chatbot API using the configured endpoint
+      const apiUrl = awsConfig.API.endpoints[0].endpoint + "/chatbot";
+      console.log("Sending message to API:", apiUrl);
+      
       const response = await fetch(
-        "https://ih183j5ibd.execute-api.us-east-1.amazonaws.com/dev/chatbot",
+        apiUrl,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Accept": "application/json"
           },
           body: JSON.stringify({ message: input }),
+          mode: "cors"
         }
       );
 
