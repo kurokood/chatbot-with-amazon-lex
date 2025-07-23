@@ -1,6 +1,6 @@
 resource "aws_cognito_identity_pool" "identity_pool" {
   identity_pool_name               = "meety_identity_pool"
-  allow_unauthenticated_identities = false
+  allow_unauthenticated_identities = true
   allow_classic_flow               = false
 
   cognito_identity_providers {
@@ -35,6 +35,31 @@ resource "aws_iam_role" "authenticated_role" {
   })
 }
 
+resource "aws_iam_role" "unauthenticated_role" {
+  name = "meety_unauthenticated_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = "cognito-identity.amazonaws.com"
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "cognito-identity.amazonaws.com:aud" = aws_cognito_identity_pool.identity_pool.id
+          }
+          "ForAnyValue:StringLike" = {
+            "cognito-identity.amazonaws.com:amr" = "unauthenticated"
+          }
+        }
+      }
+    ]
+  })
+}
+
 resource "aws_iam_policy" "lex_policy" {
   name        = "meety_lex_policy"
   description = "Policy for accessing Lex V2 from the frontend"
@@ -55,16 +80,41 @@ resource "aws_iam_policy" "lex_policy" {
   })
 }
 
+resource "aws_iam_policy" "lex_policy_unauth" {
+  name        = "meety_lex_policy_unauth"
+  description = "Policy for accessing Lex V2 from the frontend (unauthenticated)"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "lex:RecognizeText",
+          "lex:RecognizeUtterance"
+        ]
+        Resource = "arn:aws:lex:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:bot-alias/${var.lex_bot_id}/${var.lex_bot_alias_id}"
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy_attachment" "lex_policy_attachment" {
   role       = aws_iam_role.authenticated_role.name
   policy_arn = aws_iam_policy.lex_policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "lex_policy_unauth_attachment" {
+  role       = aws_iam_role.unauthenticated_role.name
+  policy_arn = aws_iam_policy.lex_policy_unauth.arn
 }
 
 resource "aws_cognito_identity_pool_roles_attachment" "identity_pool_roles" {
   identity_pool_id = aws_cognito_identity_pool.identity_pool.id
 
   roles = {
-    "authenticated" = aws_iam_role.authenticated_role.arn
+    "authenticated"   = aws_iam_role.authenticated_role.arn
+    "unauthenticated" = aws_iam_role.unauthenticated_role.arn
   }
 }
 

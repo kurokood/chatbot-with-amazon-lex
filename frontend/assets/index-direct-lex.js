@@ -35,22 +35,43 @@ let lexRuntimeClient = null;
 // Function to initialize the Lex client
 async function initializeLexClient() {
     if (typeof AWS !== "undefined") {
-        // Try to set up credentials if the user is authenticated
-        if (typeof window.setupAWSCredentials === "function") {
-            await window.setupAWSCredentials();
+        try {
+            // Set up anonymous credentials for unauthenticated users
+            AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+                IdentityPoolId: awsConfig.lex.identityPoolId || 'us-east-1:8543e4cc-c39e-48f0-b0c2-569da7efaa5b'
+            });
+            
+            // Try to set up authenticated credentials if the user is signed in
+            if (typeof window.setupAWSCredentials === "function") {
+                try {
+                    await window.setupAWSCredentials();
+                    console.log("Using authenticated credentials");
+                } catch (authError) {
+                    console.log("User not authenticated, using anonymous credentials");
+                }
+            }
+            
+            // Make sure credentials are available
+            if (!AWS.config.credentials) {
+                throw new Error("No AWS credentials available");
+            }
+            
+            // Create the Lex client
+            lexRuntimeClient = new AWS.LexRuntimeV2({
+                region: awsConfig.lex.region
+            });
+            
+            console.log("AWS Lex Runtime V2 client initialized");
+            return true;
+        } catch (error) {
+            console.error("Error initializing Lex client:", error);
+            return false;
         }
-
-        lexRuntimeClient = new AWS.LexRuntimeV2({
-            region: awsConfig.lex.region
-        });
-        console.log("AWS Lex Runtime V2 client initialized");
-        return true;
     }
     return false;
 }
 
-// Initialize the Lex client when the script loads
-initializeLexClient();
+// Don't initialize the Lex client immediately - wait until it's needed
 
 // Auth state management
 const AuthContext = React.createContext(null);
@@ -557,10 +578,32 @@ function ChatbotInterface() {
         try {
             // Initialize Lex client if not already initialized
             if (!lexRuntimeClient) {
+                console.log("Initializing Lex client...");
                 const initialized = await initializeLexClient();
                 if (!initialized) {
                     throw new Error("Could not initialize Lex client");
                 }
+            }
+            
+            // Ensure credentials are available
+            if (!AWS.config.credentials) {
+                console.log("No credentials available, initializing anonymous credentials...");
+                AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+                    IdentityPoolId: awsConfig.lex.identityPoolId
+                });
+                
+                // Refresh credentials
+                await new Promise((resolve, reject) => {
+                    AWS.config.credentials.refresh(err => {
+                        if (err) {
+                            console.error("Error refreshing anonymous credentials:", err);
+                            reject(err);
+                        } else {
+                            console.log("Anonymous credentials refreshed successfully");
+                            resolve();
+                        }
+                    });
+                });
             }
 
             console.log("Sending message to Lex directly:", input);

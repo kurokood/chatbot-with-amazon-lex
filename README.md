@@ -112,7 +112,17 @@ This application uses direct integration between the frontend and Amazon Lex V2 
 2. Reduces latency
 3. Simplifies the architecture
 
-The frontend authenticates with Amazon Cognito and uses the credentials to directly access Amazon Lex V2 through the AWS SDK.
+### Authentication Approach
+
+The application supports two authentication modes for Lex access:
+
+1. **Anonymous Access**: Users can interact with the chatbot without signing in. This uses the Cognito Identity Pool's unauthenticated role.
+
+2. **Authenticated Access**: When users sign in through the Admin panel, they get additional permissions through the Cognito Identity Pool's authenticated role.
+
+This dual-mode approach ensures that:
+- All users can use the chatbot functionality
+- Authenticated users get additional permissions for admin functions
 
 ### Removing API Gateway Resources
 
