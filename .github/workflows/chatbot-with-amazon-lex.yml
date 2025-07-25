@@ -25,6 +25,6 @@ jobs:
         aws-region: us-east-1
 
     - name: Sync frontend to S3
-      run: aws s3 sync . s3://chatbot-frotend-121485 --delete
+      run: aws s3 sync . s3://$s3BucketName/ --delete
       working-directory: frontend
 
