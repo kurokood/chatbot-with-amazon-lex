@@ -2,12 +2,8 @@
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
-locals {
-  bucket_suffix = substr(data.aws_caller_identity.current.account_id, -8, 8)
-}
-
 resource "aws_s3_bucket" "frontend" {
-  bucket = "chatbot-frontend-${local.bucket_suffix}"
+  bucket = "chatbot-frotend-121485"
 }
 
 resource "aws_s3_bucket_public_access_block" "frontend" {
