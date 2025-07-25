@@ -35,15 +35,15 @@ def lambda_handler(event, context):
             return fallback_response(intent_name)
 
         if intent_name == 'MeetingAssistant':
-            required_slots = ['MeetingDate', 'MeetingTime', 'FullName', 'MeetingDuration', 'AttendeeEmail']
+            required_slots = ['b_MeetingDate', 'c_MeetingTime', 'a_FullName', 'd_MeetingDuration', 'e_AttendeeEmail']
             all_slots_filled = all(
                 slots.get(s) and slots[s].get('value') and slots[s]['value'].get('interpretedValue')
                 for s in required_slots
             )
 
             if all_slots_filled:
-                # Handle confirmation manually via the 'confirm' slot
-                user_confirm = slots.get('confirm', {}).get('value', {}).get('interpretedValue', '').lower()
+                # Handle confirmation manually via the 'f_Confirm' slot
+                user_confirm = slots.get('f_Confirm', {}).get('value', {}).get('interpretedValue', '').lower()
 
                 if user_confirm in ['yes', 'y']:
                     confirmation_state = 'Confirmed'
@@ -53,11 +53,11 @@ def lambda_handler(event, context):
             # If confirmed, save meeting
             if confirmation_state == 'Confirmed':
                 meeting_info = {
-                    'date': slots['MeetingDate']['value']['interpretedValue'],
-                    'time': slots['MeetingTime']['value']['interpretedValue'],
-                    'attendee_name': slots['FullName']['value']['interpretedValue'],
-                    'duration': parse_duration(slots['MeetingDuration']['value']['interpretedValue']),
-                    'email': slots['AttendeeEmail']['value']['interpretedValue']
+                    'date': slots['b_MeetingDate']['value']['interpretedValue'],
+                    'time': slots['c_MeetingTime']['value']['interpretedValue'],
+                    'attendee_name': slots['a_FullName']['value']['interpretedValue'],
+                    'duration': parse_duration(slots['d_MeetingDuration']['value']['interpretedValue']),
+                    'email': slots['e_AttendeeEmail']['value']['interpretedValue']
                 }
 
                 meeting_id = str(uuid.uuid4())

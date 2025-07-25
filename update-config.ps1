@@ -28,28 +28,26 @@ if ([string]::IsNullOrEmpty($lexBotAliasId)) {
 }
 Write-Host "Using Bot Alias ID: $lexBotAliasId"
 
-# Update the frontend/index.html file
-Write-Host "Updating frontend/index.html..."
-$htmlContent = Get-Content -Path frontend/index.html -Raw
+# Update the frontend/assets/index-direct-lex.js file
+Write-Host "Updating frontend/assets/index-direct-lex.js..."
+$jsContent = Get-Content -Path frontend/assets/index-direct-lex.js -Raw
 
 # Update Lex configuration
-$htmlContent = $htmlContent -replace 'botId: "XXXXXXXXXX"', "botId: `"$lexBotId`""
-$htmlContent = $htmlContent -replace 'botId: "[A-Z0-9]+"', "botId: `"$lexBotId`""
-$htmlContent = $htmlContent -replace 'botAliasId: "XXXXXXXXXX"', "botAliasId: `"$lexBotAliasId`""
-$htmlContent = $htmlContent -replace 'botAliasId: "[A-Z0-9]+"', "botAliasId: `"$lexBotAliasId`""
-$htmlContent = $htmlContent -replace 'identityPoolId: "us-east-1:XXXXXXXXXX"', "identityPoolId: `"$cognitoIdentityPoolId`""
-$htmlContent = $htmlContent -replace 'identityPoolId: "us-east-1:[a-z0-9-]+"', "identityPoolId: `"$cognitoIdentityPoolId`""
-$htmlContent = $htmlContent -replace "IdentityPoolId: 'us-east-1:XXXXXXXXXX'", "IdentityPoolId: '$cognitoIdentityPoolId'"
-$htmlContent = $htmlContent -replace "IdentityPoolId: 'us-east-1:[a-z0-9-]+'", "IdentityPoolId: '$cognitoIdentityPoolId'"
+$jsContent = $jsContent -replace 'botId: "XXXXXXXXXX"', "botId: `"$lexBotId`""
+$jsContent = $jsContent -replace 'botId: "[A-Z0-9]+"', "botId: `"$lexBotId`""
+$jsContent = $jsContent -replace 'botAliasId: "XXXXXXXXXX"', "botAliasId: `"$lexBotAliasId`""
+$jsContent = $jsContent -replace 'botAliasId: "[A-Z0-9]+"', "botAliasId: `"$lexBotAliasId`""
+$jsContent = $jsContent -replace 'identityPoolId: "us-east-1:XXXXXXXXXX"', "identityPoolId: `"$cognitoIdentityPoolId`""
+$jsContent = $jsContent -replace 'identityPoolId: "us-east-1:[a-z0-9-]+"', "identityPoolId: `"$cognitoIdentityPoolId`""
 
 # Update Cognito configuration
-$htmlContent = $htmlContent -replace 'userPoolId: "us-east-1_[A-Za-z0-9]+"', "userPoolId: `"$cognitoUserPoolId`""
-$htmlContent = $htmlContent -replace 'userPoolWebClientId: "[a-z0-9]+"', "userPoolWebClientId: `"$cognitoClientId`""
+$jsContent = $jsContent -replace 'userPoolId: "us-east-1_[A-Za-z0-9]+"', "userPoolId: `"$cognitoUserPoolId`""
+$jsContent = $jsContent -replace 'userPoolWebClientId: "[a-z0-9]+"', "userPoolWebClientId: `"$cognitoClientId`""
 
 # Update API Gateway endpoint
-$htmlContent = $htmlContent -replace 'endpoint: "https://[a-z0-9]+\.execute-api\.us-east-1\.amazonaws\.com/dev"', "endpoint: `"$apiUrl`""
+$jsContent = $jsContent -replace 'endpoint: "https://[a-z0-9]+\.execute-api\.us-east-1\.amazonaws\.com/dev"', "endpoint: `"$apiUrl`""
 
-Set-Content -Path frontend/index.html -Value $htmlContent
+Set-Content -Path frontend/assets/index-direct-lex.js -Value $jsContent
 
 # Update the IaC/variables.tf file
 Write-Host "Updating IaC/variables.tf..."

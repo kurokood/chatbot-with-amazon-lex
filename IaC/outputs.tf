@@ -18,6 +18,16 @@ output "cloudfront_distribution_url" {
   value       = aws_cloudfront_distribution.s3_distribution.domain_name
 }
 
+output "cloudfront_distribution_id" {
+  description = "ID of the CloudFront distribution for cache invalidation"
+  value       = aws_cloudfront_distribution.s3_distribution.id
+}
+
+output "s3_bucket_name" {
+  description = "Name of the S3 bucket for frontend hosting"
+  value       = aws_s3_bucket.frontend.bucket
+}
+
 output "lex_bot_id" {
   description = "The ID of the Lex V2 bot"
   value       = aws_lexv2models_bot.meety_generative_bot.id

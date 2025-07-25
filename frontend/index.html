@@ -291,83 +291,11 @@
 <body>
   <div id="root"></div>
 
-  <!-- Load the external JS file with Babel -->
+  <!-- Load the external JS file with direct Lex integration -->
   <script>
-    // Configure AWS Amplify with the correct endpoint
-    window.awsConfig = {
-      Auth: {
-        region: "us-east-1",
-        userPoolId: "us-east-1_WJztYRsz7",
-        userPoolWebClientId: "3i23p12kbc1btop16r83cr8hek",
-        mandatorySignIn: true,
-        authenticationFlowType: "USER_PASSWORD_AUTH",
-      },
-      // API Gateway is still used for admin dashboard functionality (meetings management)
-      // The chatbot now uses direct Lex integration via AWS SDK
-      API: {
-        endpoints: [
-          {
-            name: "MeetyAPI",
-            endpoint: "https://juhxfon53b.execute-api.us-east-1.amazonaws.com/dev",
-          },
-        ],
-      },
-      // Lex V2 configuration - Generative AI Bot
-      lex: {
-        // After applying Terraform, replace these values with the actual IDs from the AWS Console
-        // You can find the Bot ID in the AWS Console > Amazon Lex > Bots > MeetyGenerativeBot
-        // The Bot Alias ID needs to be created manually in the AWS Console
-
-        botId: "LU4HOLF1OV", // Replace with the MeetyGenerativeBot ID
-        botAliasId: "QVALZCHYCY", // Replace with the manually created "prod" alias ID
-        localeId: "en_US",
-        region: "us-east-1",
-        identityPoolId: "us-east-1:8543e4cc-c39e-48f0-b0c2-569da7efaa5b" // Same as the one used below
-      }
-    };
-
-    // Configure AWS SDK
+    // Configure AWS SDK region
     AWS.config.region = 'us-east-1';
-
-    // Function to set up AWS credentials after user authentication
-    window.setupAWSCredentials = async function () {
-      try {
-        if (typeof Auth !== 'undefined') {
-          const session = await Auth.currentSession();
-          const idToken = session.getIdToken().getJwtToken();
-
-          AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-            // After applying Terraform, replace this with the actual Cognito Identity Pool ID
-            // You can find it in the AWS Console or in the Terraform output
-
-            IdentityPoolId: 'us-east-1:8543e4cc-c39e-48f0-b0c2-569da7efaa5b', // Replace with your Cognito Identity Pool ID
-            Logins: {
-              [`cognito-idp.us-east-1.amazonaws.com/${awsConfig.Auth.userPoolId}`]: idToken
-            }
-          });
-
-          // Refresh credentials
-          await new Promise((resolve, reject) => {
-            AWS.config.credentials.refresh(err => {
-              if (err) {
-                console.error("Error refreshing credentials:", err);
-                reject(err);
-              } else {
-                console.log("AWS credentials refreshed successfully");
-                resolve();
-              }
-            });
-          });
-
-          return true;
-        }
-        return false;
-      } catch (error) {
-        console.error("Error setting up AWS credentials:", error);
-        return false;
-      }
-    };
-
+    
     // Test AWS SDK connectivity on load
     function testLexConnectivity() {
       try {
@@ -379,11 +307,10 @@
         }
 
         console.log("AWS SDK loaded successfully");
-        console.log("Lex configuration:", window.awsConfig.lex);
-
+        
         // Initialize Lex client
         const lexClient = new AWS.LexRuntimeV2({
-          region: window.awsConfig.lex.region
+          region: 'us-east-1'
         });
 
         console.log("Lex client initialized successfully:", lexClient);

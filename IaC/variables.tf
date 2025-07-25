@@ -38,15 +38,17 @@ variable "acm_certificate_arn" {
 variable "lex_bot_id" {
   description = "The ID of the Lex V2 bot"
   type        = string
-  default     = "XXXXXXXXXX" # Replace with your actual Bot ID
+  default     = "STV034ZCAL" # Actual Bot ID
 }
 
 variable "lex_bot_alias_id" {
   description = "The ID of the Lex V2 bot alias"
   type        = string
-  default     = "XXXXXXXXXX" # Replace with your actual Bot Alias ID
+  default     = "" # Actual Bot Alias ID
 }
 
 # Data sources are defined in s3-cloudfront.tf
 # data "aws_region" "current" {} - already defined in s3-cloudfront.tf
 # data "aws_caller_identity" "current" {} - already defined in s3-cloudfront.tf
+
+

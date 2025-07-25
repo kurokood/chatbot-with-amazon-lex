@@ -82,19 +82,6 @@ resource "aws_apigatewayv2_integration" "put_status" {
   payload_format_version = "2.0"
 }
 
-# GENERATIVE AI CHATBOT ROUTE
-resource "aws_apigatewayv2_route" "generative_chatbot" {
-  api_id    = aws_apigatewayv2_api.http_api.id
-  route_key = "POST /chatbot"
-  target    = "integrations/${aws_apigatewayv2_integration.generative_chatbot.id}"
-}
-
-# Integration for POST /chatbot
-resource "aws_apigatewayv2_integration" "generative_chatbot" {
-  api_id                 = aws_apigatewayv2_api.http_api.id
-  integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.generative_chatbot_lambda.invoke_arn
-  payload_format_version = "2.0"
-}
+# Note: /chatbot route removed as we use direct Lex integration in frontend
 
 

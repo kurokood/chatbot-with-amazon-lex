@@ -73,27 +73,64 @@ try {
     }
     else {
         # Create a new alias
+        Write-Host "Creating new bot alias with command:"
+        Write-Host "aws lexv2-models create-bot-alias --bot-id $lexBotId --bot-alias-name $aliasName --bot-version $latestVersion"
+        
+        # Create sentiment analysis settings JSON file
+        $sentimentSettingsJson = @{
+            detectSentiment = $false
+        } | ConvertTo-Json -Compress
+        
+        # Save to temporary file
+        $tempFile = [System.IO.Path]::GetTempFileName()
+        Set-Content -Path $tempFile -Value $sentimentSettingsJson
+        
+        Write-Host "Using sentiment settings from file: $tempFile"
+        
+        # Create the alias using the file for sentiment settings
         $createResult = aws lexv2-models create-bot-alias `
             --bot-id $lexBotId `
             --bot-alias-name $aliasName `
             --bot-version $latestVersion `
-            --sentiment-analysis-settings "{'DetectSentiment': false}" | ConvertFrom-Json
+            --sentiment-analysis-settings "file://$tempFile" | ConvertFrom-Json
             
+        # Clean up temp file
+        Remove-Item -Path $tempFile
+        
         $botAliasId = $createResult.botAliasId
         Write-Host "Bot alias created successfully with ID: $botAliasId"
     }
     
-    # Update the variables.tf file with the bot alias ID
-    Write-Host "Updating IaC/variables.tf with the bot alias ID..."
-    $variablesContent = Get-Content -Path IaC/variables.tf -Raw
-    $variablesContent = $variablesContent -replace 'default\s+=\s+"XXXXXXXXXX"\s+# Replace with your actual Bot Alias ID', "default     = `"$botAliasId`" # Actual Bot Alias ID"
-    Set-Content -Path IaC/variables.tf -Value $variablesContent
+    # Verify the alias was created or updated
+    Write-Host "Verifying bot alias creation..."
+    $verifyAliases = aws lexv2-models list-bot-aliases --bot-id $lexBotId | ConvertFrom-Json
+    $verifyAlias = $verifyAliases.botAliasSummaries | Where-Object { $_.botAliasName -eq $aliasName }
     
-    # Run the update-config script to update all configuration files
-    Write-Host "Running update-config.ps1 to update all configuration files..."
-    & ./update-config.ps1 -botAliasId $botAliasId
-    
-    Write-Host "Bot alias creation and configuration update completed successfully!"
+    if ($verifyAlias) {
+        $botAliasId = $verifyAlias.botAliasId
+        Write-Host "Verified: Bot alias '$aliasName' exists with ID: $botAliasId"
+        
+        # Update the variables.tf file with the bot alias ID
+        Write-Host "Updating IaC/variables.tf with the bot alias ID..."
+        $variablesContent = Get-Content -Path IaC/variables.tf -Raw
+        $variablesContent = $variablesContent -replace 'default\s+=\s+"XXXXXXXXXX"\s+# Replace with your actual Bot Alias ID', "default     = `"$botAliasId`" # Actual Bot Alias ID"
+        Set-Content -Path IaC/variables.tf -Value $variablesContent
+        
+        # Run the update-config script to update all configuration files
+        Write-Host "Running update-config.ps1 to update all configuration files..."
+        & ./update-config.ps1 -botAliasId $botAliasId
+        
+        Write-Host "Bot alias creation and configuration update completed successfully!"
+    } else {
+        Write-Host "ERROR: Bot alias '$aliasName' was not found after creation attempt!"
+        Write-Host "Available aliases:"
+        $verifyAliases.botAliasSummaries | ForEach-Object {
+            Write-Host "  - $($_.botAliasName) (ID: $($_.botAliasId))"
+        }
+        
+        Write-Host "Failed to create or verify bot alias. Exiting."
+        exit 1
+    }
 }
 catch {
     Write-Host "Error creating or updating bot alias: $_"

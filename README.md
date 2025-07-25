@@ -15,6 +15,20 @@ The application uses the following AWS services:
 - **Amazon API Gateway**: HTTP API for backend services
 - **AWS Lambda**: Serverless compute for backend logic
 
+## Project Structure
+
+```
+├── frontend/                # Static web frontend
+│   ├── assets/              # JavaScript, CSS, and image files
+│   └── index.html           # Main HTML entry point
+├── IaC/                     # Infrastructure as Code (Terraform)
+│   ├── lambda/              # Lambda function source code
+│   ├── *.tf                 # Terraform configuration files
+│   └── LEX-INTENT-CONFIG.md # Detailed Lex intent configuration
+├── *.ps1                    # PowerShell deployment scripts
+└── README.md                # This file
+```
+
 ## Deployment Instructions
 
 ### Option 1: Automated Deployment (Recommended)
@@ -28,9 +42,10 @@ You can use the master deployment script to deploy the entire application in one
 
 This script will:
 1. Deploy the infrastructure with Terraform
-2. Create the Lex bot alias automatically
-3. Update all configuration files
-4. Deploy the frontend to S3
+2. Configure Lex intents, slots, and responses automatically (configure-lex-intents.ps1)
+3. Create the Lex bot alias automatically (create-lex-alias.ps1)
+4. Update all configuration files with the actual AWS resource IDs (update-config.ps1)
+5. Deploy the frontend to S3
 
 ### Option 2: Manual Deployment
 
@@ -48,34 +63,43 @@ After the infrastructure is deployed, you'll see the outputs including the Lex b
 
 ### 2. Configuration Steps
 
-After applying Terraform, you can either create the Lex bot alias automatically or manually:
+After applying Terraform, you can configure the Lex bot automatically or manually:
 
-#### Option 1: Automated Bot Alias Creation (Recommended)
+#### Option 1: Automated Lex Configuration (Recommended)
 
-Run the provided PowerShell script to automatically create the Lex bot alias:
+Run the provided PowerShell scripts to automatically configure the Lex bot:
 
 ```powershell
-# Run from the project root directory
+# Configure Lex intents, slots, and responses
+./configure-lex-intents.ps1
+
+# Create the Lex bot alias
 ./create-lex-alias.ps1
 ```
 
-This script will:
-1. Get the Lex bot ID from Terraform outputs
-2. Find the latest bot version
-3. Create a "prod" alias for the bot
-4. Update all configuration files automatically
+These scripts will:
+1. Configure the StartMeety intent with appropriate responses
+2. Configure the MeetingAssistant intent with slots and responses
+3. Configure the FallbackIntent with appropriate responses
+4. Create a "prod" alias for the bot
+5. Update all configuration files automatically
 
-#### Option 2: Manual Bot Alias Creation
+#### Option 2: Manual Lex Configuration
 
-If you prefer to create the bot alias manually:
+If you prefer to configure the Lex bot manually:
 
 1. Go to the AWS Console > Amazon Lex > Bots > MeetyGenerativeBot
-2. Go to the Aliases tab and create a new alias named "prod"
-3. Associate it with the version created by Terraform
-4. Enable the generative AI features in the console
-5. Run the update-config.ps1 script to update configuration files
+2. Configure the StartMeety intent with appropriate responses
+3. Configure the MeetingAssistant intent with slots and responses
+4. Configure the FallbackIntent with appropriate responses
+5. Create a "prod" alias for the bot
+6. Run the update-config.ps1 script to update configuration files
+
+For detailed instructions on manual configuration, see [LEX-INTENT-CONFIG.md](IaC/LEX-INTENT-CONFIG.md).
 
 #### Update Configuration Files
+
+The `update-config.ps1` script is automatically called by the `create-lex-alias.ps1` script, so you don't need to run it separately:
 
 After creating the resources, you can use the provided PowerShell script to update the configuration files:
 
@@ -98,7 +122,7 @@ The script will:
 
 Alternatively, you can manually update the following files:
 
-1. Update `frontend/index.html`:
+1. Update `frontend/assets/index-direct-lex.js`:
    - Replace the `botId` field with the actual MeetyGenerativeBot ID
    - Replace the `botAliasId` field with the manually created "prod" alias ID
    - Replace the `identityPoolId` field with the actual Cognito Identity Pool ID
@@ -115,10 +139,9 @@ Alternatively, you can manually update the following files:
 Upload the frontend files to the S3 bucket:
 
 ```bash
-# Get the S3 bucket name from the CloudFront distribution
-$cloudFrontUrl = terraform -chdir=IaC output -json | ConvertFrom-Json | Select-Object -ExpandProperty cloudfront_distribution_url | Select-Object -ExpandProperty value
-$s3BucketName = aws cloudfront get-distribution --id $(aws cloudfront list-distributions --query "DistributionList.Items[?DomainName=='$cloudFrontUrl'].Id" --output text) --query "Distribution.DistributionConfig.Origins.Items[0].DomainName" --output text
-$s3BucketName = $s3BucketName -replace "\.s3\.amazonaws\.com", ""
+# Get the S3 bucket name from Terraform outputs
+$outputs = terraform -chdir=IaC output -json | ConvertFrom-Json
+$s3BucketName = $outputs.s3_bucket_name.value
 
 # Deploy to S3
 aws s3 sync frontend/ s3://$s3BucketName/ --delete
@@ -129,6 +152,27 @@ aws s3 sync frontend/ s3://$s3BucketName/ --delete
 1. Access the application through the CloudFront URL provided in the Terraform output
 2. Use the chatbot interface to manage meetings through natural language
 3. Sign in to the admin panel to view and manage meetings
+
+### Testing the Bot
+
+After deployment, you can test the bot:
+
+1. Access the application through the CloudFront URL
+2. In the chatbot interface, try the following:
+   - Type "Hello" or "Hi" to test the StartMeety intent
+   - Type "I want to schedule a meeting" to test the MeetingAssistant intent
+   - Follow the prompts to provide the required information
+   - Confirm the meeting when prompted
+3. The meeting will be saved to the DynamoDB table
+
+### Troubleshooting
+
+If you encounter any issues:
+
+1. Check the CloudWatch logs for the Lambda functions
+2. Ensure all slots are properly configured
+3. Verify that the Lambda functions have the correct permissions
+4. Check the browser console for any frontend errors
 
 ## Features
 

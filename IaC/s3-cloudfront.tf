@@ -7,7 +7,7 @@ locals {
 }
 
 resource "aws_s3_bucket" "frontend" {
-  bucket = "chatbot-frotend-121485"
+  bucket = "chatbot-frontend-${local.bucket_suffix}"
 }
 
 resource "aws_s3_bucket_public_access_block" "frontend" {

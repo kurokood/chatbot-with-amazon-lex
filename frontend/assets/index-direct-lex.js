@@ -1,25 +1,29 @@
-// Use the AWS config from the HTML file
-const awsConfig = window.awsConfig || {
+// Configuration for AWS services
+// All configuration values are defined here as a single source of truth
+const awsConfig = {
     Auth: {
         region: "us-east-1",
-        userPoolId: "us-east-1_veGqpCmbU",
-        userPoolWebClientId: "15n778uqrdpa8e5284sbogfe9a",
+        userPoolId: "us-east-1_zirlg9HRp",
+        userPoolWebClientId: "1v10c6u2e7du0hf98fvm2o7brl",
         mandatorySignIn: true,
         authenticationFlowType: "USER_PASSWORD_AUTH",
     },
+    // API Gateway is still used for admin dashboard functionality (meetings management)
     API: {
         endpoints: [
             {
                 name: "MeetyAPI",
-                endpoint: "https://d3dm2l1zg4.execute-api.us-east-1.amazonaws.com/dev",
+                endpoint: "https://yodhk60myj.execute-api.us-east-1.amazonaws.com/dev",
             },
         ],
     },
+    // Lex V2 configuration - Generative AI Bot
     lex: {
-        botId: "XXXXXXXXXX", // Replace with your actual Bot ID
-        botAliasId: "XXXXXXXXXX", // Replace with your actual Bot Alias ID
+        botId: "VSDNZOMOOR", // Replace with the MeetyGenerativeBot ID
+        botAliasId: "O9MTRKFEEQ", // Replace with the manually created "prod" alias ID
         localeId: "en_US",
-        region: "us-east-1"
+        region: "us-east-1",
+        identityPoolId: "us-east-1:9ad4caec-86a8-4b88-b96a-be4c3744e0c1" // Same as the one used below
     }
 };
 
@@ -27,7 +31,45 @@ const awsConfig = window.awsConfig || {
 if (typeof Amplify !== "undefined") {
     Amplify.configure(awsConfig);
     console.log("Amplify configured with:", awsConfig);
+    const Auth = Amplify.Auth;
+    window.Auth = Auth;
 }
+
+// Function to set up AWS credentials after user authentication
+window.setupAWSCredentials = async function () {
+    try {
+        if (typeof Auth !== 'undefined') {
+            const session = await Auth.currentSession();
+            const idToken = session.getIdToken().getJwtToken();
+
+            AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+                IdentityPoolId: awsConfig.lex.identityPoolId,
+                Logins: {
+                    [`cognito-idp.us-east-1.amazonaws.com/${awsConfig.Auth.userPoolId}`]: idToken
+                }
+            });
+
+            // Refresh credentials
+            await new Promise((resolve, reject) => {
+                AWS.config.credentials.refresh(err => {
+                    if (err) {
+                        console.error("Error refreshing credentials:", err);
+                        reject(err);
+                    } else {
+                        console.log("AWS credentials refreshed successfully");
+                        resolve();
+                    }
+                });
+            });
+
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error("Error setting up AWS credentials:", error);
+        return false;
+    }
+};
 
 // Initialize AWS SDK Lex client
 let lexRuntimeClient = null;
@@ -1097,3 +1139,11 @@ const styles = `
 const styleElement = document.createElement("style");
 styleElement.textContent = styles;
 document.head.appendChild(styleElement);
+
+
+
+
+
+
+
+
