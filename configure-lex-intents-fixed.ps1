@@ -217,6 +217,16 @@ if ($existingSlots.slotSummaries -and $existingSlots.slotSummaries.Count -gt 0) 
     Start-Sleep -Seconds 3
 }
 
+# Fetch built-in slot type IDs for en_US locale
+$slotTypes = aws --no-cli-pager lexv2-models list-slot-types `
+    --bot-id $lexBotId `
+    --locale-id "en_US" `
+    --bot-version "DRAFT" | ConvertFrom-Json
+
+function Get-SlotTypeId($slotTypeName) {
+    return ($slotTypes.slotTypeSummaries | Where-Object { $_.slotTypeName -eq $slotTypeName }).slotTypeId
+}
+
 Write-Host "Creating slots with alphabetical prefixes to force correct order:"
 Write-Host "1.a_FullName 2.b_MeetingDate 3.c_MeetingTime 4.d_MeetingDuration 5.e_AttendeeEmail 6.f_Confirm"
 

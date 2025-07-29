@@ -27,280 +27,42 @@ const awsConfig = {
     }
 };
 
-// Wait for all dependencies to load before initializing
-function waitForDependencies() {
-    return new Promise((resolve) => {
-        const checkDependencies = () => {
-            if (typeof AWS !== "undefined" &&
-                typeof React !== "undefined" &&
-                typeof ReactDOM !== "undefined") {
-                resolve();
-            } else {
-                console.log("Waiting for dependencies to load...", {
-                    AWS: typeof AWS !== "undefined",
-                    React: typeof React !== "undefined",
-                    ReactDOM: typeof ReactDOM !== "undefined"
-                });
-                setTimeout(checkDependencies, 100);
-            }
-        };
-        checkDependencies();
-    });
+// Initialize Amplify
+if (typeof Amplify !== "undefined") {
+    Amplify.configure(awsConfig);
+    console.log("Amplify configured with:", awsConfig);
 }
-
-// Initialize Cognito after dependencies are loaded
-let userPool, cognitoUser, Auth, API;
-async function initializeCognito() {
-    await waitForDependencies();
-
-    if (typeof AWS !== "undefined") {
-        // Initialize AWS Cognito services using AWS SDK
-        const cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider({
-            region: awsConfig.Auth.region
-        });
-
-        // Create Auth object compatible with Amplify Auth API
-        Auth = {
-            currentAuthenticatedUser: () => {
-                return new Promise((resolve, reject) => {
-                    const authResult = localStorage.getItem('cognitoAuthResult');
-                    if (authResult) {
-                        try {
-                            const parsedResult = JSON.parse(authResult);
-                            resolve(parsedResult);
-                        } catch (error) {
-                            reject(new Error('Invalid stored authentication data'));
-                        }
-                    } else {
-                        reject(new Error('No current user'));
-                    }
-                });
-            },
-            currentSession: () => {
-                return new Promise((resolve, reject) => {
-                    const authResult = localStorage.getItem('cognitoAuthResult');
-                    if (authResult) {
-                        try {
-                            const parsedResult = JSON.parse(authResult);
-                            // Create a session-like object
-                            const session = {
-                                getIdToken: () => ({
-                                    getJwtToken: () => parsedResult.idToken
-                                }),
-                                getAccessToken: () => ({
-                                    getJwtToken: () => parsedResult.accessToken
-                                }),
-                                isValid: () => true // Simplified validation
-                            };
-                            resolve(session);
-                        } catch (error) {
-                            reject(new Error('Invalid stored session data'));
-                        }
-                    } else {
-                        reject(new Error('No current session'));
-                    }
-                });
-            },
-            signIn: (username, password) => {
-                return new Promise((resolve, reject) => {
-                    const params = {
-                        AuthFlow: 'USER_PASSWORD_AUTH',
-                        ClientId: awsConfig.Auth.userPoolWebClientId,
-                        AuthParameters: {
-                            USERNAME: username,
-                            PASSWORD: password
-                        }
-                    };
-
-                    cognitoIdentityServiceProvider.initiateAuth(params, (err, data) => {
-                        if (err) {
-                            console.error("Authentication error:", err);
-                            reject(err);
-                        } else {
-                            console.log("Authentication response:", data);
-
-                            // Handle NEW_PASSWORD_REQUIRED challenge
-                            if (data.ChallengeName === 'NEW_PASSWORD_REQUIRED') {
-                                console.log("User needs to set a new password");
-
-                                // For now, use the same password as the new password
-                                // In a production app, you'd prompt the user for a new password
-                                const challengeParams = {
-                                    ChallengeName: 'NEW_PASSWORD_REQUIRED',
-                                    ClientId: awsConfig.Auth.userPoolWebClientId,
-                                    Session: data.Session,
-                                    ChallengeResponses: {
-                                        USERNAME: username,
-                                        NEW_PASSWORD: password // Using same password for simplicity
-                                    }
-                                };
-
-                                cognitoIdentityServiceProvider.respondToAuthChallenge(challengeParams, (challengeErr, challengeData) => {
-                                    if (challengeErr) {
-                                        console.error("Challenge response error:", challengeErr);
-                                        reject(challengeErr);
-                                    } else {
-                                        console.log("Challenge response:", challengeData);
-
-                                        if (challengeData.AuthenticationResult) {
-                                            // Store the authentication result
-                                            const authResult = {
-                                                username: username,
-                                                accessToken: challengeData.AuthenticationResult.AccessToken,
-                                                idToken: challengeData.AuthenticationResult.IdToken,
-                                                refreshToken: challengeData.AuthenticationResult.RefreshToken
-                                            };
-
-                                            console.log("Storing auth result after challenge:", authResult);
-
-                                            // Store in localStorage for persistence
-                                            localStorage.setItem('cognitoAuthResult', JSON.stringify(authResult));
-
-                                            resolve(authResult);
-                                        } else {
-                                            reject(new Error("Authentication result missing after challenge"));
-                                        }
-                                    }
-                                });
-                                return;
-                            }
-
-                            // Check if AuthenticationResult exists (normal flow)
-                            if (!data.AuthenticationResult) {
-                                console.error("AuthenticationResult is missing from response:", data);
-                                reject(new Error("Authentication result is missing from response"));
-                                return;
-                            }
-
-                            // Store the authentication result (normal flow)
-                            const authResult = {
-                                username: username,
-                                accessToken: data.AuthenticationResult.AccessToken,
-                                idToken: data.AuthenticationResult.IdToken,
-                                refreshToken: data.AuthenticationResult.RefreshToken
-                            };
-
-                            console.log("Storing auth result:", authResult);
-
-                            // Store in localStorage for persistence
-                            localStorage.setItem('cognitoAuthResult', JSON.stringify(authResult));
-
-                            resolve(authResult);
-                        }
-                    });
-                });
-            },
-            signOut: () => {
-                return new Promise((resolve) => {
-                    // Clear stored authentication data
-                    localStorage.removeItem('cognitoAuthResult');
-                    resolve();
-                });
-            }
-        };
-
-        // Create API object for admin functionality
-        API = {
-            get: async (apiName, path, options = {}) => {
-                const endpoint = awsConfig.API.endpoints.find(e => e.name === apiName)?.endpoint;
-                if (!endpoint) throw new Error(`API ${apiName} not found`);
-
-                const response = await fetch(`${endpoint}${path}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...options.headers
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                return response.json();
-            },
-            put: async (apiName, path, options = {}) => {
-                const endpoint = awsConfig.API.endpoints.find(e => e.name === apiName)?.endpoint;
-                if (!endpoint) throw new Error(`API ${apiName} not found`);
-
-                const response = await fetch(`${endpoint}${path}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...options.headers
-                    },
-                    body: JSON.stringify(options.body)
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                return response.json();
-            }
-        };
-
-        // Make Auth and API available globally
-        window.Auth = Auth;
-        window.API = API;
-
-        console.log("Cognito configured successfully:", {
-            userPoolId: awsConfig.Auth.userPoolId,
-            clientId: awsConfig.Auth.userPoolWebClientId,
-            region: awsConfig.Auth.region
-        });
-
-        // Initialize the React app after Cognito is ready
-        renderApp();
-    } else {
-        console.error("AWS Cognito SDK failed to load");
-    }
-}
-
-// Function to render the app after all dependencies are loaded
-function renderApp() {
-    ReactDOM.render(<App />, document.getElementById("root"));
-}
-
-// Start the initialization process
-initializeCognito();
+const Auth = Amplify.Auth;
+window.Auth = Auth;
 
 // Function to set up AWS credentials after user authentication
 window.setupAWSCredentials = async function () {
     try {
         if (typeof Auth !== 'undefined') {
-            try {
-                // Try to get current session for authenticated users
-                const session = await Auth.currentSession();
-                const idToken = session.getIdToken().getJwtToken();
+            const session = await Auth.currentSession();
+            const idToken = session.getIdToken().getJwtToken();
 
-                AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-                    IdentityPoolId: awsConfig.lex.identityPoolId,
-                    Logins: {
-                        [`cognito-idp.us-east-1.amazonaws.com/${awsConfig.Auth.userPoolId}`]: idToken
+            AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+                IdentityPoolId: awsConfig.lex.identityPoolId,
+                Logins: {
+                    [`cognito-idp.us-east-1.amazonaws.com/${awsConfig.Auth.userPoolId}`]: idToken
+                }
+            });
+
+            // Refresh credentials
+            await new Promise((resolve, reject) => {
+                AWS.config.credentials.refresh(err => {
+                    if (err) {
+                        console.error("Error refreshing credentials:", err);
+                        reject(err);
+                    } else {
+                        console.log("AWS credentials refreshed successfully");
+                        resolve();
                     }
                 });
+            });
 
-                // Refresh credentials
-                await new Promise((resolve, reject) => {
-                    AWS.config.credentials.refresh(err => {
-                        if (err) {
-                            console.error("Error refreshing credentials:", err);
-                            reject(err);
-                        } else {
-                            console.log("AWS credentials refreshed successfully");
-                            resolve();
-                        }
-                    });
-                });
-
-                return true;
-            } catch (sessionError) {
-                // No current session - user is not authenticated
-                // This is normal for unauthenticated users, so don't throw an error
-                console.log("No authenticated session found, using anonymous credentials");
-                return false;
-            }
+            return true;
         }
         return false;
     } catch (error) {
@@ -320,7 +82,7 @@ async function initializeLexClient() {
             AWS.config.credentials = new AWS.CognitoIdentityCredentials({
                 IdentityPoolId: awsConfig.lex.identityPoolId || 'us-east-1:8543e4cc-c39e-48f0-b0c2-569da7efaa5b'
             });
-
+            
             // Try to set up authenticated credentials if the user is signed in
             if (typeof window.setupAWSCredentials === "function") {
                 try {
@@ -330,17 +92,17 @@ async function initializeLexClient() {
                     console.log("User not authenticated, using anonymous credentials");
                 }
             }
-
+            
             // Make sure credentials are available
             if (!AWS.config.credentials) {
                 throw new Error("No AWS credentials available");
             }
-
+            
             // Create the Lex client
             lexRuntimeClient = new AWS.LexRuntimeV2({
                 region: awsConfig.lex.region
             });
-
+            
             console.log("AWS Lex Runtime V2 client initialized");
             return true;
         } catch (error) {
@@ -370,15 +132,7 @@ function AuthProvider({ children }) {
 
     async function checkAuthState() {
         try {
-            // Wait for Auth to be available
-            const authToUse = Auth || window.Auth;
-            if (!authToUse) {
-                console.log("Auth not available yet, waiting...");
-                setTimeout(checkAuthState, 500);
-                return;
-            }
-
-            const user = await authToUse.currentAuthenticatedUser();
+            const user = await Auth.currentAuthenticatedUser();
             setAuthState({
                 isAuthenticated: true,
                 user,
@@ -395,12 +149,7 @@ function AuthProvider({ children }) {
 
     async function signIn(username, password) {
         try {
-            const authToUse = Auth || window.Auth;
-            if (!authToUse) {
-                throw new Error("Authentication service not available");
-            }
-
-            const user = await authToUse.signIn(username, password);
+            const user = await Auth.signIn(username, password);
             setAuthState({
                 isAuthenticated: true,
                 user,
@@ -424,12 +173,7 @@ function AuthProvider({ children }) {
 
     async function signOut() {
         try {
-            const authToUse = Auth || window.Auth;
-            if (!authToUse) {
-                throw new Error("Authentication service not available");
-            }
-
-            await authToUse.signOut();
+            await Auth.signOut();
             setAuthState({
                 isAuthenticated: false,
                 user: null,
@@ -544,7 +288,7 @@ function MeetingCalendar() {
                                     <td>{new Date(meeting.date).toLocaleDateString()}</td>
                                     <td>{meeting.time}</td>
                                     <td>{meeting.subject}</td>
-                                    <td>{meeting.attendees && Array.isArray(meeting.attendees) ? meeting.attendees.join(", ") : "No attendees"}</td>
+                                    <td>{meeting.attendees.join(", ")}</td>
                                     <td
                                         className={`meeting-status-${meeting.status.toLowerCase()}`}
                                     >
@@ -661,7 +405,7 @@ function PendingMeetings() {
                                     <td>{new Date(meeting.date).toLocaleDateString()}</td>
                                     <td>{meeting.time}</td>
                                     <td>{meeting.subject}</td>
-                                    <td>{meeting.attendees && Array.isArray(meeting.attendees) ? meeting.attendees.join(", ") : "No attendees"}</td>
+                                    <td>{meeting.attendees.join(", ")}</td>
                                     <td>
                                         <button
                                             onClick={() =>
@@ -882,14 +626,14 @@ function ChatbotInterface() {
                     throw new Error("Could not initialize Lex client");
                 }
             }
-
+            
             // Ensure credentials are available
             if (!AWS.config.credentials) {
                 console.log("No credentials available, initializing anonymous credentials...");
                 AWS.config.credentials = new AWS.CognitoIdentityCredentials({
                     IdentityPoolId: awsConfig.lex.identityPoolId
                 });
-
+                
                 // Refresh credentials
                 await new Promise((resolve, reject) => {
                     AWS.config.credentials.refresh(err => {
@@ -1018,7 +762,8 @@ function ChatbotInterface() {
     );
 }
 
-// App will be rendered by the renderApp() function after dependencies are loaded
+// Render the App
+ReactDOM.render(<App />, document.getElementById("root"));
 
 // CSS Styles
 const styles = `

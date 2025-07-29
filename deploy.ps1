@@ -76,7 +76,7 @@ try {
 
 if ($bucketExists) {
     Write-Host "Deploying frontend to S3 bucket: $s3BucketName"
-    aws --no-cli-pager s3 sync frontend/ s3://$s3BucketName/ --delete
+    aws --no-cli-pager s3 sync frontend/ s3://chatbot-frontend-121485/ --delete
 
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Frontend deployment failed with exit code $LASTEXITCODE"

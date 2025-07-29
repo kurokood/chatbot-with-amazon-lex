@@ -7,8 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meety Chatbot</title>
 
-  <!-- AWS Amplify Library -->
-  <script src="https://cdn.jsdelivr.net/npm/aws-amplify@5.0.4/dist/aws-amplify.min.js"></script>
+  <!-- Using AWS SDK's built-in Cognito functionality instead of separate library -->
 
   <!-- AWS SDK for JavaScript - Used for direct Lex V2 integration -->
   <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1001.0.min.js"></script>
@@ -324,7 +323,7 @@
     setTimeout(testLexConnectivity, 1000);
   </script>
 
-  <!-- Load the external JS file with direct Lex integration -->
+  <!-- Ensure index-direct-lex.js is loaded after all dependencies with Babel transpilation -->
   <script type="text/babel" src="/assets/index-direct-lex.js"></script>
 </body>
 
