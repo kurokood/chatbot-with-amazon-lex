@@ -70,6 +70,12 @@ resource "aws_lambda_function" "get_meetings_lambda" {
 
   # Inline code from CloudFormation template
   source_code_hash = filebase64sha256("${path.module}/lambda/get_meetings.zip")
+
+  environment {
+    variables = {
+      DYNAMODB_TABLE = aws_dynamodb_table.meetings_table.name
+    }
+  }
 }
 
 resource "aws_lambda_permission" "get_meetings_lambda_permission" {
@@ -116,6 +122,12 @@ resource "aws_lambda_function" "get_pending_meetings_lambda" {
   timeout       = 60
 
   filename = "${path.module}/lambda/get_pending_meetings.zip"
+
+  environment {
+    variables = {
+      DYNAMODB_TABLE = aws_dynamodb_table.meetings_table.name
+    }
+  }
 }
 
 resource "aws_lambda_permission" "get_pending_meetings_lambda_permission" {
@@ -162,6 +174,12 @@ resource "aws_lambda_function" "change_meeting_status_lambda" {
   timeout       = 60
 
   filename = "${path.module}/lambda/change_meeting_status.zip"
+
+  environment {
+    variables = {
+      DYNAMODB_TABLE = aws_dynamodb_table.meetings_table.name
+    }
+  }
 }
 
 resource "aws_lambda_permission" "change_meeting_status_lambda_permission" {

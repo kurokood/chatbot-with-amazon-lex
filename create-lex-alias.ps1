@@ -110,12 +110,6 @@ try {
         $botAliasId = $verifyAlias.botAliasId
         Write-Host "Verified: Bot alias '$aliasName' exists with ID: $botAliasId"
         
-        # Update the variables.tf file with the bot alias ID
-        Write-Host "Updating IaC/variables.tf with the bot alias ID..."
-        $variablesContent = Get-Content -Path IaC/variables.tf -Raw
-        $variablesContent = $variablesContent -replace 'default\s+=\s+"XXXXXXXXXX"\s+# Replace with your actual Bot Alias ID', "default     = `"$botAliasId`" # Actual Bot Alias ID"
-        Set-Content -Path IaC/variables.tf -Value $variablesContent
-        
         # Run the update-config script to update all configuration files
         Write-Host "Running update-config.ps1 to update all configuration files..."
         & ./update-config.ps1 -botAliasId $botAliasId

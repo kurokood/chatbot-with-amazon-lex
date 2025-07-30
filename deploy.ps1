@@ -1,5 +1,15 @@
 # PowerShell script to deploy the entire application
 
+# Step 0: Build Lambda packages
+Write-Host "Step 0: Building Lambda packages..."
+$scriptPath = Join-Path -Path $PSScriptRoot -ChildPath "build-lambda-packages.ps1"
+& $scriptPath
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Lambda package building failed with exit code $LASTEXITCODE"
+    exit $LASTEXITCODE
+}
+
 # Step 1: Deploy infrastructure with Terraform
 Write-Host "Step 1: Deploying infrastructure with Terraform..."
 Push-Location -Path IaC
@@ -76,7 +86,7 @@ try {
 
 if ($bucketExists) {
     Write-Host "Deploying frontend to S3 bucket: $s3BucketName"
-    aws --no-cli-pager s3 sync frontend/ s3://chatbot-frontend-121485/ --delete
+    aws --no-cli-pager s3 sync frontend/ s3://$s3BucketName/ --delete
 
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Frontend deployment failed with exit code $LASTEXITCODE"

@@ -1,238 +1,539 @@
-# Meety - AI-powered Meeting Management
+# Meety - AI-powered Meeting Management Chatbot
 
-Meety is a meeting management chatbot application that helps users manage and track meetings through conversational AI powered by Amazon Lex V2 and Amazon Bedrock.
+Meety is a comprehensive meeting management application that combines conversational AI with a web-based admin interface. Users can schedule meetings through natural language interactions with an AI chatbot powered by Amazon Lex V2, while administrators can manage meetings through a dedicated web interface.
 
-## Architecture
+## 🚀 Features
 
-The application uses the following AWS services:
+- **AI Chatbot Interface**: Schedule meetings using natural language with Amazon Lex V2
+- **Admin Dashboard**: Web-based interface for managing meetings and users
+- **Real-time Updates**: View pending meetings and update their status
+- **User Authentication**: Secure login system with Amazon Cognito
+- **Responsive Design**: Works on desktop and mobile devices
+- **Direct Lex Integration**: Optimized architecture with direct frontend-to-Lex communication
 
-- **Amazon Cognito**: User authentication and authorization
-- **Amazon Lex V2**: Conversational AI chatbot with generative capabilities
-- **Amazon Bedrock**: Generative AI foundation models
-- **Amazon DynamoDB**: NoSQL database for meeting data
-- **Amazon S3**: Static website hosting
-- **Amazon CloudFront**: CDN for frontend distribution
-- **Amazon API Gateway**: HTTP API for backend services
+## 🏗️ Architecture
+
+The application uses a modern serverless architecture with the following AWS services:
+
+- **Amazon Cognito**: User authentication and authorization with Identity Pool
+- **Amazon Lex V2**: Conversational AI chatbot with slot-based conversation flow
+- **Amazon DynamoDB**: NoSQL database for meeting data storage
+- **Amazon S3 + CloudFront**: Static website hosting with global CDN
+- **Amazon API Gateway**: HTTP API for backend services (admin functions)
 - **AWS Lambda**: Serverless compute for backend logic
+- **Amazon Route53**: DNS management for custom domain
 
-## Project Structure
+### System Overview
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│                 │    │                 │    │                 │
+│   Frontend      │    │   Amazon        │    │   Amazon        │
+│   (HTML/JS)     │◄──►│   Cognito       │◄──►│   Lex V2        │
+│                 │    │                 │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────┬───────┘
+         │                       │                      │
+         │                       │                      ▼
+         ▼                       ▼              ┌─────────────────┐
+┌─────────────────┐    ┌─────────────────┐    │                 │
+│                 │    │                 │    │   AWS Lambda    │
+│   CloudFront    │    │   API Gateway   │    │   (Fulfillment) │
+│   + S3          │    │   + Lambda      │    │                 │
+│                 │    │                 │    └─────────┬───────┘
+└─────────────────┘    └─────────────────┘              │
+                                │                       ▼
+                                ▼               ┌─────────────────┐
+                       ┌─────────────────┐     │                 │
+                       │                 │     │   Amazon        │
+                       │   DynamoDB      │◄────│   DynamoDB      │
+                       │                 │     │                 │
+                       └─────────────────┘     └─────────────────┘
+```
+
+### Key Architectural Decisions
+
+**1. Direct Lex Integration**
+- Frontend communicates directly with Amazon Lex V2 using AWS SDK
+- Eliminates API Gateway overhead for chatbot interactions
+- Reduces latency and simplifies the conversation flow
+
+**2. Dual Authentication Model**
+- **Anonymous Access**: Anyone can use the chatbot (Cognito Identity Pool unauthenticated role)
+- **Authenticated Access**: Admin users get additional permissions for meeting management
+
+**3. Serverless Backend**
+- All backend logic runs on AWS Lambda
+- Auto-scaling and pay-per-use pricing model
+- No server management required
+
+**4. Static Frontend with CDN**
+- Frontend hosted on S3 with CloudFront distribution
+- Global content delivery for optimal performance
+- Custom domain with SSL certificate
+
+## 📁 Project Structure
 
 ```
+├── .github/                 # GitHub workflows and CI/CD
+├── .kiro/                   # Kiro AI assistant configuration
 ├── frontend/                # Static web frontend
-│   ├── assets/              # JavaScript, CSS, and image files
+│   ├── assets/              # Compiled JavaScript, CSS, and images
 │   └── index.html           # Main HTML entry point
 ├── IaC/                     # Infrastructure as Code (Terraform)
-│   ├── lambda/              # Lambda function source code
+│   ├── lambda/              # Lambda function source code and packages
 │   ├── *.tf                 # Terraform configuration files
-│   └── LEX-INTENT-CONFIG.md # Detailed Lex intent configuration
-├── *.ps1                    # PowerShell deployment scripts
-└── README.md                # This file
+│   └── terraform.tfvars.example # Template for environment variables
+├── *.ps1                    # PowerShell deployment and utility scripts
+└── README.md                # This comprehensive guide
 ```
 
-## Deployment Instructions
+## 📋 Prerequisites
 
-### Option 1: Automated Deployment (Recommended)
+### 1. AWS Account Setup
+- AWS CLI installed and configured with appropriate permissions
+- AWS account with permissions to create:
+  - Cognito User Pools and Identity Pools
+  - Lambda functions and IAM roles
+  - DynamoDB tables
+  - S3 buckets and CloudFront distributions
+  - API Gateway and Route53 records
+  - Lex V2 bots
 
-You can use the master deployment script to deploy the entire application in one step:
+### 2. Domain and SSL Certificate
+- **Route53 Hosted Zone**: Create a hosted zone for your domain
+- **ACM Certificate**: Create an SSL certificate in the `us-east-1` region for CloudFront
+  - Certificate must cover your domain (e.g., `*.yourdomain.com` or `chatbot.yourdomain.com`)
+  - Certificate must be validated and in "Issued" status
+
+### 3. Development Tools
+- **Terraform** (>= 1.0) - Infrastructure as Code
+- **PowerShell** - For deployment scripts (Windows/Linux/macOS)
+- **AWS CLI** - For manual operations and script execution
+
+## ⚙️ Configuration Guide
+
+### Environment Variables Setup
+
+Before deploying, you need to create a `terraform.tfvars` file with your specific configuration:
+
+```bash
+# Navigate to the IaC directory
+cd IaC
+
+# Copy the example template
+cp terraform.tfvars.example terraform.tfvars
+
+# Edit with your specific values
+```
+
+### Required Variables
+
+#### 1. S3 Bucket Name
+```hcl
+s3_bucket_name = "your-unique-bucket-name"
+```
+- **Description**: Name for the S3 bucket that will host the frontend
+- **Requirements**: Must be globally unique across all AWS accounts
+- **Example**: `"meety-frontend-prod-123456"`
+
+#### 2. User Configuration
+```hcl
+username   = "your-username"
+user_email = "your-email@example.com"
+```
+- **Description**: Initial user that will be created in Cognito User Pool
+- **Requirements**: Valid email address for receiving temporary password
+- **Example**: 
+  ```hcl
+  username   = "admin"
+  user_email = "admin@yourcompany.com"
+  ```
+
+#### 3. Domain Configuration
+```hcl
+zone_name = "yourdomain.com"
+```
+- **Description**: Your Route53 hosted zone domain name
+- **Requirements**: Must have a Route53 hosted zone already created
+- **Example**: `"mycompany.com"`
+
+#### 4. SSL Certificate
+```hcl
+acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012"
+```
+- **Description**: ARN of your ACM SSL certificate
+- **Requirements**: 
+  - Certificate must be in `us-east-1` region (for CloudFront)
+  - Certificate must be validated and issued
+  - Certificate must cover your domain
+
+### Example Configuration
+
+```hcl
+# terraform.tfvars example
+s3_bucket_name = "meety-frontend-mycompany-2024"
+username       = "admin"
+user_email     = "admin@mycompany.com"
+zone_name      = "mycompany.com"
+acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/abcd1234-..."
+```
+
+### Optional Variables
+
+These variables have sensible defaults but can be customized:
+
+```hcl
+api_name         = "meety-api"           # API Gateway name
+user_pool_name   = "meety-userpool"     # Cognito User Pool name
+lex_bot_alias_id = "prod"               # Lex bot alias ID
+```
+
+### Security Notes
+
+- The `terraform.tfvars` file contains sensitive information
+- This file is automatically excluded from version control (`.gitignore`)
+- Never commit `terraform.tfvars` to your repository
+- Use `terraform.tfvars.example` as a template for team members
+
+## 🚀 Deployment Instructions
+
+### Option 1: One-Click Automated Deployment (Recommended)
+
+Deploy the entire application with a single command:
 
 ```powershell
 # Run from the project root directory
 ./deploy.ps1
 ```
 
-This script will:
-1. Deploy the infrastructure with Terraform
-2. Configure Lex intents, slots, and responses automatically (configure-lex-intents.ps1)
-3. Create the Lex bot alias automatically (create-lex-alias.ps1)
-4. Update all configuration files with the actual AWS resource IDs (update-config.ps1)
-5. Deploy the frontend to S3
+This master deployment script will:
+1. **Build Lambda Packages** - Create deployment packages for all Lambda functions
+2. **Deploy Infrastructure** - Apply Terraform configuration to create AWS resources
+3. **Configure Lex Bot** - Automatically set up intents, slots, and responses
+4. **Create Bot Alias** - Create production alias for the Lex bot
+5. **Update Configuration** - Update frontend with actual AWS resource IDs
+6. **Deploy Frontend** - Upload static files to S3 and invalidate CloudFront cache
 
-### Option 2: Manual Deployment
+**Total deployment time**: ~5-10 minutes
 
-If you prefer to deploy the application step by step:
+### Option 2: Step-by-Step Deployment
 
-#### 1. Deploy Infrastructure
+For more control over the deployment process:
 
+#### Step 1: Build Lambda Packages
+```powershell
+./build-lambda-packages.ps1
+```
+
+#### Step 2: Deploy Infrastructure
 ```bash
 cd IaC
 terraform init
-terraform apply
+terraform plan    # Review changes
+terraform apply   # Deploy resources
 ```
 
-After the infrastructure is deployed, you'll see the outputs including the Lex bot ID, Cognito IDs, and API Gateway URL.
-
-### 2. Configuration Steps
-
-After applying Terraform, you can configure the Lex bot automatically or manually:
-
-#### Option 1: Automated Lex Configuration (Recommended)
-
-Run the provided PowerShell scripts to automatically configure the Lex bot:
-
+#### Step 3: Configure Lex Bot
 ```powershell
-# Configure Lex intents, slots, and responses
-./configure-lex-intents.ps1
+# Automated configuration (recommended)
+./configure-lex-intents-fixed.ps1
 
-# Create the Lex bot alias
+# Or configure manually via AWS Console (see Lex Configuration section below)
+```
+
+#### Step 4: Create Bot Alias and Update Configuration
+```powershell
 ./create-lex-alias.ps1
+# This script also calls update-config.ps1 automatically
 ```
 
-These scripts will:
-1. Configure the StartMeety intent with appropriate responses
-2. Configure the MeetingAssistant intent with slots and responses
-3. Configure the FallbackIntent with appropriate responses
-4. Create a "prod" alias for the bot
-5. Update all configuration files automatically
-
-#### Option 2: Manual Lex Configuration
-
-If you prefer to configure the Lex bot manually:
-
-1. Go to the AWS Console > Amazon Lex > Bots > MeetyGenerativeBot
-2. Configure the StartMeety intent with appropriate responses
-3. Configure the MeetingAssistant intent with slots and responses
-4. Configure the FallbackIntent with appropriate responses
-5. Create a "prod" alias for the bot
-6. Run the update-config.ps1 script to update configuration files
-
-For detailed instructions on manual configuration, see [LEX-INTENT-CONFIG.md](IaC/LEX-INTENT-CONFIG.md).
-
-#### Update Configuration Files
-
-The `update-config.ps1` script is automatically called by the `create-lex-alias.ps1` script, so you don't need to run it separately:
-
-After creating the resources, you can use the provided PowerShell script to update the configuration files:
-
+#### Step 5: Deploy Frontend
 ```powershell
-# Run from the project root directory
-./update-config.ps1
-```
-
-The script will:
-1. Get the Terraform outputs:
-   - Lex Bot ID
-   - Cognito Identity Pool ID
-   - Cognito User Pool ID
-   - Cognito User Pool Web Client ID
-   - API Gateway endpoint URL
-2. Prompt you for the manually created Bot Alias ID
-3. Update the following files with the actual IDs:
-   - `frontend/index.html` - All AWS resource IDs and endpoints
-   - `IaC/variables.tf` - Lex Bot ID and Bot Alias ID
-
-Alternatively, you can manually update the following files:
-
-1. Update `frontend/assets/index-direct-lex.js`:
-   - Replace the `botId` field with the actual MeetyGenerativeBot ID
-   - Replace the `botAliasId` field with the manually created "prod" alias ID
-   - Replace the `identityPoolId` field with the actual Cognito Identity Pool ID
-   - Replace the `userPoolId` field with the actual Cognito User Pool ID
-   - Replace the `userPoolWebClientId` field with the actual Cognito User Pool Web Client ID
-   - Replace the API Gateway `endpoint` field with the actual API Gateway URL
-
-2. Update `IaC/variables.tf`:
-   - Update `lex_bot_id` with the actual MeetyGenerativeBot ID
-   - Update `lex_bot_alias_id` with the manually created "prod" alias ID
-
-### 3. Deploy Frontend
-
-Upload the frontend files to the S3 bucket:
-
-```bash
-# Get the S3 bucket name from Terraform outputs
+# Get bucket name from Terraform outputs
 $outputs = terraform -chdir=IaC output -json | ConvertFrom-Json
-$s3BucketName = $outputs.s3_bucket_name.value
+$bucketName = $outputs.s3_bucket_name.value
 
-# Deploy to S3
-aws s3 sync frontend/ s3://$s3BucketName/ --delete
+# Upload files to S3
+aws s3 sync frontend/ s3://$bucketName/ --delete
+
+# Invalidate CloudFront cache
+$distributionId = $outputs.cloudfront_distribution_id.value
+aws cloudfront create-invalidation --distribution-id $distributionId --paths "/*"
 ```
 
-## Usage
+## 🤖 Lex Bot Configuration
 
-1. Access the application through the CloudFront URL provided in the Terraform output
-2. Use the chatbot interface to manage meetings through natural language
-3. Sign in to the admin panel to view and manage meetings
+### Automated Configuration
 
-### Testing the Bot
+The `configure-lex-intents-fixed.ps1` script automates the configuration of the Lex intents, slots, and responses. It uses the AWS CLI to interact with the Lex V2 API.
 
-After deployment, you can test the bot:
+### Intent Configuration
 
-1. Access the application through the CloudFront URL
-2. In the chatbot interface, try the following:
-   - Type "Hello" or "Hi" to test the StartMeety intent
-   - Type "I want to schedule a meeting" to test the MeetingAssistant intent
-   - Follow the prompts to provide the required information
-   - Confirm the meeting when prompted
-3. The meeting will be saved to the DynamoDB table
+#### StartMeety Intent
 
-### Troubleshooting
+The StartMeety intent is used for greeting and starting conversations.
 
-If you encounter any issues:
+**Sample Utterances:**
+- "Hello"
+- "Hi"
+- "Hey Meety"
+- "help"
 
-1. Check the CloudWatch logs for the Lambda functions
-2. Ensure all slots are properly configured
-3. Verify that the Lambda functions have the correct permissions
-4. Check the browser console for any frontend errors
+**Closing Responses:**
+- "Hi! I'm Meety, your meeting assistant. How can I help you schedule a meeting today?"
+- "Hello! how may i help you today?"
+- "Hi! how can i help you?"
 
-## Features
+#### MeetingAssistant Intent
 
-- Meeting scheduling and status management
-- AI-powered chatbot interface using Amazon Lex with generative capabilities
-- User authentication and authorization
-- Meeting status tracking (pending, confirmed, etc.)
-- Web-based frontend interface
+The MeetingAssistant intent is used for scheduling meetings.
 
-## Architecture Diagram
+**Sample Utterances:**
+- "I want to schedule a meeting"
+- "Book a meeting"
+- "Schedule a meeting"
+- "Set up a meeting"
+- "Create a meeting"
+- "I need to schedule a meeting"
+- "Help me book a meeting"
 
+**Initial Response:**
+- "Sure!"
+
+**Slots Configuration:**
+
+| Slot Name | Slot Type | Prompt | Required |
+|-----------|-----------|--------|----------|
+| a_FullName | AMAZON.FirstName | "What is your name?" | Yes |
+| b_MeetingDate | AMAZON.Date | "What date would you like to schedule the meeting for?" | Yes |
+| c_MeetingTime | AMAZON.Time | "What time would you prefer for the meeting?" | Yes |
+| d_MeetingDuration | AMAZON.Duration | "How long do you want to meet in minutes? (30 or 60)" | Yes |
+| e_AttendeeEmail | AMAZON.EmailAddress | "Please provide me your email address." | Yes |
+| f_Confirm | AMAZON.Confirmation | "Do you want to proceed with the meeting?" | Yes |
+
+**Fulfillment:**
+- Fulfillment code hook is enabled
+- Lambda function: "generative-lex-fulfillment"
+
+#### FallbackIntent
+
+The FallbackIntent is used when the user's input doesn't match any other intent.
+
+**Closing Response:**
+- "Sorry, I did not get it. Could you try again?"
+
+### Manual Configuration
+
+If you prefer to configure the Lex intents manually:
+
+#### 1. StartMeety Intent Configuration
+1. Go to the AWS Console and navigate to Amazon Lex
+2. Select the "MeetyGenerativeBot" bot
+3. Go to the "Intents" section and select the "StartMeety" intent
+4. Add the closing responses listed above
+
+#### 2. MeetingAssistant Intent Configuration
+1. Go to the "MeetingAssistant" intent
+2. Add the initial response: "Sure!"
+3. Add all the slots from the table above with their respective configurations
+4. Configure fulfillment code hook:
+   - Enable the fulfillment code hook
+   - Select the Lambda function "generative-lex-fulfillment"
+
+#### 3. FallbackIntent Configuration
+1. Go to the "FallbackIntent" intent
+2. Add the closing response: "Sorry, I did not get it. Could you try again?"
+
+## 🎯 Usage Guide
+
+### Accessing the Application
+
+After successful deployment, access your application at:
 ```
-┌─────────────┐     ┌───────────────┐     ┌───────────────┐
-│             │     │               │     │               │
-│  Frontend   │────▶│  Amazon       │────▶│  Amazon       │
-│  (React)    │     │  Cognito      │     │  Lex V2       │
-│             │     │               │     │               │
-└─────────────┘     └───────────────┘     └───────┬───────┘
-                                                  │
-                                                  ▼
-                                          ┌───────────────┐
-                                          │               │
-                                          │  Amazon       │
-                                          │  Bedrock      │
-                                          │               │
-                                          └───────────────┘
+https://chatbot.yourdomain.com
+```
+(Replace with your actual domain from the Route53 configuration)
+
+### Chatbot Interface
+
+**Starting a Conversation:**
+- Type "Hello", "Hi", or "Help" to begin
+- The bot will greet you and offer assistance
+
+**Scheduling a Meeting:**
+1. Type "I want to schedule a meeting" or similar
+2. Provide the following information when prompted:
+   - **Your name**: Full name for the meeting
+   - **Meeting date**: Date in YYYY-MM-DD format or natural language
+   - **Meeting time**: Time in HH:MM format or natural language
+   - **Duration**: Meeting length (30 or 60 minutes)
+   - **Email address**: Your contact email
+   - **Confirmation**: Confirm to save the meeting
+
+**Example Conversation:**
+```
+User: Hi
+Bot: Hi! I'm Meety, your meeting assistant. How can I help you schedule a meeting today?
+
+User: I want to schedule a meeting
+Bot: Sure! What is your name?
+
+User: John Doe
+Bot: What date would you like to schedule the meeting for?
+
+User: Tomorrow
+Bot: What time would you prefer for the meeting?
+
+User: 2 PM
+Bot: How long do you want to meet in minutes? (30 or 60)
+
+User: 60
+Bot: Please provide me your email address.
+
+User: john@example.com
+Bot: Do you want to proceed with the meeting?
+
+User: Yes
+Bot: Perfect! I've scheduled your meeting for [date] at 2:00 PM...
 ```
 
-## Direct Lex Integration
+### Admin Dashboard
 
-This application uses direct integration between the frontend and Amazon Lex V2 using the AWS SDK, eliminating the need for API Gateway and Lambda intermediaries for the chatbot functionality. This approach:
+**Signing In:**
+1. Click "Sign In" in the top navigation
+2. Use the credentials from your `terraform.tfvars` configuration
+3. Check your email for the temporary password (first login only)
 
-1. Eliminates CORS issues
-2. Reduces latency
-3. Simplifies the architecture
+**Managing Meetings:**
+- **View Pending Meetings**: See all meetings awaiting approval
+- **Approve/Reject**: Update meeting status with action buttons
+- **Meeting Details**: View complete meeting information including attendee details
 
-### Authentication Approach
+## 🧪 Testing the Application
 
-The application supports two authentication modes for Lex access:
+**Quick Test Checklist:**
+- [ ] Chatbot responds to greetings
+- [ ] Meeting scheduling flow works end-to-end
+- [ ] Admin login functions properly
+- [ ] Pending meetings appear in admin dashboard
+- [ ] Meeting status updates work
+- [ ] Email notifications are received (if configured)
 
-1. **Anonymous Access**: Users can interact with the chatbot without signing in. This uses the Cognito Identity Pool's unauthenticated role.
+## 🔧 Troubleshooting
 
-2. **Authenticated Access**: When users sign in through the Admin panel, they get additional permissions through the Cognito Identity Pool's authenticated role.
+### Common Configuration Issues
 
-This dual-mode approach ensures that:
-- All users can use the chatbot functionality
-- Authenticated users get additional permissions for admin functions
+1. **S3 Bucket Already Exists**
+   - Error: `BucketAlreadyExists`
+   - Solution: Choose a different, globally unique bucket name
 
-### Removing API Gateway Resources
+2. **Certificate Not Found**
+   - Error: `InvalidParameterValue`
+   - Solution: Verify the certificate ARN and ensure it's in `us-east-1`
 
-If you want to completely remove the API Gateway and Lambda resources for the chatbot (since they're no longer needed with direct Lex integration), you can use the provided cleanup script:
+3. **Route53 Zone Not Found**
+   - Error: `NoSuchHostedZone`
+   - Solution: Create the Route53 hosted zone first or verify the domain name
 
-```powershell
-# Run from the project root directory
-./cleanup-api-gateway.ps1
+4. **Invalid Email Format**
+   - Error: `InvalidParameterValue`
+   - Solution: Ensure the email address is valid and properly formatted
+
+### Runtime Issues
+
+1. **Chatbot Not Responding**
+   - Check browser console for JavaScript errors
+   - Verify Cognito Identity Pool permissions
+   - Ensure Lex bot is built and alias exists
+
+2. **Authentication Issues**
+   - Verify Cognito User Pool configuration
+   - Check temporary password in email
+   - Ensure ACM certificate is valid
+
+3. **Meeting Not Saving**
+   - Check Lambda function logs in CloudWatch
+   - Verify DynamoDB table permissions
+   - Ensure all required slots are filled
+
+4. **Frontend Not Loading**
+   - Check S3 bucket policy and CloudFront distribution
+   - Verify DNS records in Route53
+   - Clear browser cache and try again
+
+### Debugging Steps
+1. Check AWS CloudWatch logs for Lambda functions
+2. Verify all Terraform resources are created successfully
+3. Test API endpoints directly using curl or Postman
+4. Check browser developer tools for network errors
+
+## 📊 Project Maintenance
+
+### Environment-Specific Configurations
+
+**Development:**
+```hcl
+s3_bucket_name = "meety-frontend-dev-123"
+username       = "dev-admin"
+user_email     = "dev-admin@mycompany.com"
 ```
 
-This script will:
-1. Remove the generative_chatbot route and integration from apigateway.tf
-2. Remove the generative_chatbot Lambda function from lambda-generative.tf
-3. Remove the generative_chatbot.py and generative_chatbot.zip files
+**Production:**
+```hcl
+s3_bucket_name = "meety-frontend-prod-123"
+username       = "admin"
+user_email     = "admin@mycompany.com"
+```
 
-After running the script, you'll need to run `terraform apply` to apply these changes.
+### Maintenance Recommendations
+
+1. Regularly run `terraform plan` to check for configuration drift
+2. Use variables for all environment-specific values
+3. Keep deployment scripts dynamic and avoid hardcoded resource names
+4. Periodically review and remove unused files and resources
+5. Maintain consistent code formatting across all files
+6. Monitor CloudWatch logs for errors and performance issues
+7. Update Lambda function dependencies regularly
+8. Review and rotate access keys and certificates
+
+### Data Flow
+
+**Meeting Scheduling Flow:**
+1. User interacts with chatbot interface
+2. Frontend sends messages directly to Lex V2
+3. Lex processes intent and extracts slot values
+4. Lex calls Lambda fulfillment function
+5. Lambda saves meeting data to DynamoDB
+6. Response flows back through Lex to frontend
+
+**Admin Management Flow:**
+1. Admin authenticates via Cognito User Pool
+2. Frontend calls API Gateway with JWT token
+3. API Gateway validates token and routes to Lambda
+4. Lambda performs CRUD operations on DynamoDB
+5. Results returned to admin interface
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🆘 Support
+
+If you encounter issues or have questions:
+
+1. Check the troubleshooting section above
+2. Review the AWS CloudWatch logs
+3. Validate your `terraform.tfvars` configuration
+4. Ensure all prerequisites are met
+5. Open an issue in the GitHub repository
+
+---
+
+**Built with ❤️ using AWS Serverless Technologies**

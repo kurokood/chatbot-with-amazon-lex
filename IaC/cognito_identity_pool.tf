@@ -1,3 +1,10 @@
+# Local values for constructing bot alias ARN
+locals {
+  bot_alias_name = "prod"
+  bot_alias_id   = "HUCBWNPSPM"  # Actual bot alias ID from AWS
+  bot_alias_arn  = "arn:aws:lex:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:bot-alias/${aws_lexv2models_bot.meety_generative_bot.id}/${local.bot_alias_id}"
+}
+
 resource "aws_cognito_identity_pool" "identity_pool" {
   identity_pool_name               = "meety_identity_pool"
   allow_unauthenticated_identities = true
@@ -74,7 +81,7 @@ resource "aws_iam_policy" "lex_policy" {
           "lex:RecognizeUtterance",
           "lex:StartConversation"
         ]
-        Resource = "arn:aws:lex:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:bot-alias/${var.lex_bot_id}/${var.lex_bot_alias_id}"
+        Resource = local.bot_alias_arn
       }
     ]
   })
@@ -93,7 +100,7 @@ resource "aws_iam_policy" "lex_policy_unauth" {
           "lex:RecognizeText",
           "lex:RecognizeUtterance"
         ]
-        Resource = "arn:aws:lex:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:bot-alias/${var.lex_bot_id}/${var.lex_bot_alias_id}"
+        Resource = local.bot_alias_arn
       }
     ]
   })

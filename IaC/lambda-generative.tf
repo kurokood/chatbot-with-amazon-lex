@@ -68,7 +68,7 @@ resource "aws_lambda_function" "generative_lex_lambda" {
     variables = {
       DYNAMODB_TABLE = aws_dynamodb_table.meetings_table.name
       BOT_ID         = aws_lexv2models_bot.meety_generative_bot.id
-      BOT_ALIAS_ID   = var.lex_bot_alias_id
+      BOT_ALIAS_ID   = "HUCBWNPSPM"  # Actual bot alias ID
     }
   }
 }
@@ -79,7 +79,7 @@ resource "aws_lambda_permission" "generative_lex_lambda_permission" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.generative_lex_lambda.function_name
   principal     = "lexv2.amazonaws.com"
-  source_arn    = "arn:aws:lex:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:bot-alias/${aws_lexv2models_bot.meety_generative_bot.id}/*"
+  source_arn    = "arn:aws:lex:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:bot-alias/${aws_lexv2models_bot.meety_generative_bot.id}/${var.lex_bot_alias_id}"
 }
 
 # Note: generative_chatbot_lambda removed as we use direct Lex integration in frontend

@@ -3,7 +3,7 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 resource "aws_s3_bucket" "frontend" {
-  bucket = "chatbot-frontend-121485"
+  bucket = var.s3_bucket_name
 }
 
 resource "aws_s3_bucket_public_access_block" "frontend" {

@@ -3,8 +3,8 @@
 const awsConfig = {
     Auth: {
         region: "us-east-1",
-        userPoolId: "us-east-1_7oiH0px5x",
-        userPoolWebClientId: "27h7jhbcl0qa3m22unr8gf0kbf",
+        userPoolId: "us-east-1_6F7gh25WJ",
+        userPoolWebClientId: "3otgk0c8v1ih81ds1t21u9o6b7",
         mandatorySignIn: true,
         authenticationFlowType: "USER_PASSWORD_AUTH",
     },
@@ -13,17 +13,17 @@ const awsConfig = {
         endpoints: [
             {
                 name: "MeetyAPI",
-                endpoint: "https://s9cmrquop9.execute-api.us-east-1.amazonaws.com/dev",
+                endpoint: "https://neoq21uc7d.execute-api.us-east-1.amazonaws.com/dev",
             },
         ],
     },
     // Lex V2 configuration - Generative AI Bot
     lex: {
-        botId: "ABN2EQNUYO", // Replace with the MeetyGenerativeBot ID
-        botAliasId: "7M8XEPP9M3", // Replace with the manually created "prod" alias ID
+        botId: "XZGMIGKG5L", // Replace with the MeetyGenerativeBot ID
+        botAliasId: "HUCBWNPSPM", // Replace with the manually created "prod" alias ID
         localeId: "en_US",
         region: "us-east-1",
-        identityPoolId: "us-east-1:413de198-c1d5-4f2e-981a-0a4f6af48f17" // Same as the one used below
+        identityPoolId: "us-east-1:db97f77c-b373-4904-9ec6-f69bc094b74d" // Same as the one used below
     }
 };
 
@@ -214,10 +214,18 @@ async function initializeCognito() {
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
                 }
 
-                return response.json();
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                } else {
+                    const text = await response.text();
+                    console.warn('Response is not JSON:', text);
+                    return { message: text };
+                }
             },
             put: async (apiName, path, options = {}) => {
                 const endpoint = awsConfig.API.endpoints.find(e => e.name === apiName)?.endpoint;
@@ -233,10 +241,18 @@ async function initializeCognito() {
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
                 }
 
-                return response.json();
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                } else {
+                    const text = await response.text();
+                    console.warn('Response is not JSON:', text);
+                    return { message: text };
+                }
             }
         };
 
@@ -473,14 +489,35 @@ function MeetingCalendar() {
     async function fetchMeetings() {
         try {
             setIsLoading(true);
-            const response = await API.get("MeetyAPI", "/meetings", {
+            
+            // Get current date and date 30 days from now for the date range
+            const now = new Date();
+            const startDate = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+            const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 30 days from now
+            
+            const response = await API.get("MeetyAPI", `/meetings?startDate=${startDate}&endDate=${endDate}`, {
                 headers: {
                     Authorization: `Bearer ${(await Auth.currentSession())
                         .getIdToken()
                         .getJwtToken()}`,
                 },
             });
-            setMeetings(response);
+            
+            // Handle different response formats from API
+            let parsedResponse;
+            if (typeof response === 'string') {
+                parsedResponse = JSON.parse(response);
+            } else if (response && response.message && typeof response.message === 'string') {
+                // Handle case where response is wrapped in a message object
+                parsedResponse = JSON.parse(response.message);
+            } else {
+                parsedResponse = response;
+            }
+            
+            console.log("Meetings API Response:", response);
+            console.log("Parsed meetings:", parsedResponse);
+            
+            setMeetings(parsedResponse);
             setIsLoading(false);
         } catch (err) {
             setError(err.message || "Failed to fetch meetings");
@@ -498,7 +535,7 @@ function MeetingCalendar() {
                 },
                 body: {
                     meetingId,
-                    status: newStatus,
+                    newStatus: newStatus,
                 },
             });
             // Refresh the list after update
@@ -532,8 +569,8 @@ function MeetingCalendar() {
                             <tr>
                                 <th>Date</th>
                                 <th>Time</th>
-                                <th>Subject</th>
-                                <th>Attendees</th>
+                                <th>Attendee Name</th>
+                                <th>Email</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -542,9 +579,9 @@ function MeetingCalendar() {
                             {meetings.map((meeting) => (
                                 <tr key={meeting.meetingId}>
                                     <td>{new Date(meeting.date).toLocaleDateString()}</td>
-                                    <td>{meeting.time}</td>
-                                    <td>{meeting.subject}</td>
-                                    <td>{meeting.attendees && Array.isArray(meeting.attendees) ? meeting.attendees.join(", ") : "No attendees"}</td>
+                                    <td>{meeting.startTime} - {meeting.endTime}</td>
+                                    <td>{meeting.attendeeName}</td>
+                                    <td>{meeting.email}</td>
                                     <td
                                         className={`meeting-status-${meeting.status.toLowerCase()}`}
                                     >
@@ -553,10 +590,10 @@ function MeetingCalendar() {
                                     <td>
                                         <button
                                             onClick={() =>
-                                                updateMeetingStatus(meeting.meetingId, "confirmed")
+                                                updateMeetingStatus(meeting.meetingId, "approved")
                                             }
                                         >
-                                            Confirm
+                                            Approve
                                         </button>
                                         <button
                                             onClick={() =>
@@ -598,7 +635,22 @@ function PendingMeetings() {
                         .getJwtToken()}`,
                 },
             });
-            setPendingMeetings(response);
+            
+            // Handle different response formats from API
+            let parsedResponse;
+            if (typeof response === 'string') {
+                parsedResponse = JSON.parse(response);
+            } else if (response && response.message && typeof response.message === 'string') {
+                // Handle case where response is wrapped in a message object
+                parsedResponse = JSON.parse(response.message);
+            } else {
+                parsedResponse = response;
+            }
+            
+            console.log("API Response:", response);
+            console.log("Parsed meetings:", parsedResponse);
+            
+            setPendingMeetings(parsedResponse);
             setIsLoading(false);
         } catch (err) {
             setError(err.message || "Failed to fetch pending meetings");
@@ -616,7 +668,7 @@ function PendingMeetings() {
                 },
                 body: {
                     meetingId,
-                    status: newStatus,
+                    newStatus: newStatus,
                 },
             });
             // Refresh the list after update
@@ -650,8 +702,9 @@ function PendingMeetings() {
                             <tr>
                                 <th>Date</th>
                                 <th>Time</th>
-                                <th>Subject</th>
-                                <th>Attendees</th>
+                                <th>Attendee Name</th>
+                                <th>Email</th>
+                                <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -659,16 +712,17 @@ function PendingMeetings() {
                             {pendingMeetings.map((meeting) => (
                                 <tr key={meeting.meetingId}>
                                     <td>{new Date(meeting.date).toLocaleDateString()}</td>
-                                    <td>{meeting.time}</td>
-                                    <td>{meeting.subject}</td>
-                                    <td>{meeting.attendees && Array.isArray(meeting.attendees) ? meeting.attendees.join(", ") : "No attendees"}</td>
+                                    <td>{meeting.startTime} - {meeting.endTime}</td>
+                                    <td>{meeting.attendeeName}</td>
+                                    <td>{meeting.email}</td>
+                                    <td>{meeting.status}</td>
                                     <td>
                                         <button
                                             onClick={() =>
-                                                updateMeetingStatus(meeting.meetingId, "confirmed")
+                                                updateMeetingStatus(meeting.meetingId, "approved")
                                             }
                                         >
-                                            Confirm
+                                            Approve
                                         </button>
                                         <button
                                             onClick={() =>
@@ -867,8 +921,8 @@ function ChatbotInterface() {
 
         if (!input.trim()) return;
 
-        // Add user message to chat
-        const userMessage = { text: input, sender: "user" };
+        // Add user message to chat - ensure text is not split into characters
+        const userMessage = { text: input.toString(), sender: "user" };
         setMessages((prev) => [...prev, userMessage]);
         setInput("");
         setIsLoading(true);
@@ -987,7 +1041,18 @@ function ChatbotInterface() {
             <div className="chat-messages">
                 {messages.map((msg, index) => (
                     <div key={index} className={`message ${msg.sender}`}>
-                        <div className="message-bubble">{msg.text}</div>
+                        <div className="message-bubble">
+                            <span 
+                                style={{ 
+                                    display: 'inline-block', 
+                                    whiteSpace: 'normal',
+                                    wordBreak: 'normal',
+                                    overflowWrap: 'break-word'
+                                }}
+                            >
+                                {msg.text}
+                            </span>
+                        </div>
                     </div>
                 ))}
                 {isLoading && (
@@ -1132,6 +1197,7 @@ const styles = `
   .message {
     margin-bottom: 1rem;
     display: flex;
+    flex-direction: row;
   }
 
   .message.user {
@@ -1143,6 +1209,26 @@ const styles = `
     border-radius: 18px;
     max-width: 70%;
     word-wrap: break-word;
+    white-space: normal;
+    display: block;
+    line-height: 1.4;
+    writing-mode: horizontal-tb;
+    direction: ltr;
+    text-orientation: mixed;
+    overflow-wrap: break-word;
+    word-break: normal;
+    text-align: left;
+  }
+
+  .message-bubble span {
+    display: inline-block !important;
+    white-space: normal !important;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    font-family: inherit !important;
   }
 
   .message.bot .message-bubble {
@@ -1154,6 +1240,24 @@ const styles = `
     background-color: var(--primary-color);
     color: var(--white);
     border-bottom-right-radius: 4px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+  }
+
+  .message.user .message-bubble span {
+    display: inline-block !important;
+    white-space: normal !important;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
+    line-height: 1.4;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    font-family: inherit !important;
+    writing-mode: horizontal-tb !important;
+    direction: ltr !important;
+    text-orientation: mixed !important;
   }
 
   .typing span {
@@ -1394,6 +1498,14 @@ const styles = `
 const styleElement = document.createElement("style");
 styleElement.textContent = styles;
 document.head.appendChild(styleElement);
+
+
+
+
+
+
+
+
 
 
 

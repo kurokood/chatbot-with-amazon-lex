@@ -138,6 +138,38 @@ resource "aws_lexv2models_intent" "meeting_assistant" {
   # Enable fulfillment with Lambda
   fulfillment_code_hook {
     enabled = true
+    post_fulfillment_status_specification {
+      success_response {
+        allow_interrupt = true
+        message_group {
+          message {
+            plain_text_message {
+              value = "Thank you for scheduling your meeting!"
+            }
+          }
+        }
+      }
+      failure_response {
+        allow_interrupt = true
+        message_group {
+          message {
+            plain_text_message {
+              value = "I'm sorry, I couldn't schedule your meeting. Please try again."
+            }
+          }
+        }
+      }
+      timeout_response {
+        allow_interrupt = true
+        message_group {
+          message {
+            plain_text_message {
+              value = "I'm sorry, the request timed out. Please try again."
+            }
+          }
+        }
+      }
+    }
   }
 
   # Note: Slots and confirmation settings need to be configured manually in AWS Console
