@@ -1,0 +1,23 @@
+# Terraform Variables Template
+# Copy this file to terraform.tfvars and update with your specific values
+
+# S3 Bucket Configuration
+# Must be globally unique across all AWS accounts
+s3_bucket_name = "your-unique-bucket-name"
+
+# User Configuration
+# Initial user that will be created in Cognito
+username   = "your-username"
+user_email = "your-email@example.com"
+
+# Domain Configuration
+# Your Route53 hosted zone domain name
+zone_name = "yourdomain.com"
+
+# Domain Configuration
+# Your Route53 A record name
+domain_name = "yourdomain.com"
+
+# SSL Certificate ARN
+# Create an ACM certificate for your domain and paste the ARN here
+acm_certificate_arn = "arn:aws:acm:us-east-1:YOUR-ACCOUNT-ID:certificate/YOUR-CERTIFICATE-ID"
