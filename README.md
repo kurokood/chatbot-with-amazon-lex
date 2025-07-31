@@ -536,4 +536,9 @@ If you encounter issues or have questions:
 
 ---
 
+###  Author: Mon Villarin
+ 📌 LinkedIn: [Ramon Villarin](https://www.linkedin.com/in/ramon-villarin/)  
+ 📌 Portfolio Site: [MonVillarin.com](https://monvillarin.com)  
+ 📌 Blog Post: [Building Meety: A Serverless AI-Powered Meeting Management System with Amazon Lex V2](https://blog.monvillarin.com/building-meety-a-serverless-ai-powered-meeting-management-system-with-amazon-lex-v2)
+
 **Built with ❤️ using AWS Serverless Technologies**
